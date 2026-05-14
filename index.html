@@ -1,0 +1,2265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Newme 纽米 - 手绘治愈风成长计时</title>
+
+<!-- PWA Meta -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Newme 纽米">
+<meta name="theme-color" content="#F5F0E8">
+<meta name="description" content="Newme 纽米 - 游戏化自我成长助手">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/iconify-icon@2.1.0/dist/iconify-icon.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
+
+:root {
+  --bg-paper: #F5F0E8;
+  --primary-blue: #7EC8E3;
+  --secondary-blue: #6BB8D4;
+  --text-main: #5A524D;
+  --accent-warm: #E9967A;
+  --accent-red: #D4735E;
+  --green: #A8D5A2;
+  --yellow: #F0C060;
+  --purple: #B8A9D4;
+}
+* { box-sizing: border-box; }
+body {
+  background: #E5E7EB;
+  font-family: 'ZCOOL KuaiLe', cursive, sans-serif;
+  color: var(--text-main);
+  display: flex; justify-content: center; align-items: center;
+  min-height: 100vh; margin: 0; overflow: hidden;
+}
+.phone {
+  width: 390px; height: 844px; background: var(--bg-paper);
+  position: relative; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+  border-radius: 40px; border: 6px solid #333; overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.paper-texture {
+  position: absolute; top:0;left:0;right:0;bottom:0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 10;
+}
+
+/* Fix scrolling: main-content fills remaining space and scrolls */
+#main-content {
+  flex: 1; overflow-y: auto; position: relative; z-index: 20;
+  -webkit-overflow-scrolling: touch;
+}
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+.page { display: none; animation: fadeIn .35s ease-out forwards; padding-bottom: 100px; min-height: 100%; }
+.page.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+.sketch-shadow { box-shadow: 3px 3px 0px 0px rgba(126,200,227,0.18); }
+.sketch-shadow-red { box-shadow: 3px 3px 0px 0px rgba(233,150,122,0.18); }
+.sketch-card { background: #fff; border-radius: 22px; padding: 16px; }
+.btn-tap:active { transform: scale(0.94); }
+.btn-tap { transition: transform .1s; cursor: pointer; user-select: none; }
+
+.progress-bar { height: 12px; background: #fff; border: 2px solid var(--primary-blue); border-radius: 10px; overflow: hidden; position: relative; }
+.progress-fill { height: 100%; background: var(--primary-blue); transition: width .6s cubic-bezier(0.34,1.56,0.64,1); border-radius: 8px; }
+.progress-fill.warm { background: var(--accent-warm); }
+.progress-fill.green { background: var(--green); }
+.progress-fill.yellow { background: var(--yellow); }
+.progress-fill.purple { background: var(--purple); }
+.progress-fill.red { background: var(--accent-red); }
+
+.ring-circle { transition: stroke-dashoffset .8s ease-in-out; transform: rotate(-90deg); transform-origin: 50% 50%; }
+
+.nav-item { transition: color .3s; }
+.nav-item.active { color: var(--primary-blue); }
+.nav-item.active .nav-dot { opacity: 1; }
+
+/* Level-up overlay */
+.levelup-overlay {
+  position: fixed; top:0;left:0;right:0;bottom:0; z-index: 9999;
+  background: rgba(245,240,232,0.97);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  animation: levelupIn .5s ease-out;
+}
+@keyframes levelupIn { from {opacity:0} to {opacity:1} }
+.levelup-num { font-size: 80px; color: var(--accent-warm); animation: levelBounce .6s cubic-bezier(0.34,1.56,0.64,1); }
+@keyframes levelBounce { from { transform:scale(0.3);opacity:0 } to { transform:scale(1);opacity:1 } }
+
+.confetti {
+  position: fixed; z-index: 10000; pointer-events: none;
+  animation: confettiFall 2.5s ease-in forwards;
+}
+@keyframes confettiFall {
+  0% { transform: translateY(-100px) rotate(0deg); opacity:1; }
+  100% { transform: translateY(105vh) rotate(720deg); opacity:0; }
+}
+
+.float-reward {
+  position: fixed; z-index: 9000; pointer-events: none;
+  animation: floatUp 1.5s ease-out forwards;
+  font-weight: bold; font-size: 20px;
+}
+@keyframes floatUp {
+  0% { transform: translateY(0) scale(1); opacity:1; }
+  100% { transform: translateY(-120px) scale(1.4); opacity:0; }
+}
+
+.modal-mask {
+  position: fixed; top:0;left:0;right:0;bottom:0; background: rgba(0,0,0,0.4);
+  z-index: 8000; display: flex; align-items: center; justify-content: center;
+  animation: fadeIn .2s;
+}
+.modal-box {
+  background: var(--bg-paper); border-radius: 26px; padding: 24px;
+  width: 340px; max-height: 85vh; overflow-y: auto;
+  animation: popIn .35s cubic-bezier(0.34,1.56,0.64,1);
+  border: 2px solid var(--primary-blue);
+}
+@keyframes popIn { from { transform:scale(0.85);opacity:0 } to { transform:scale(1);opacity:1 } }
+
+.countdown-dot { width:8px;height:8px;border-radius:50%;background:var(--accent-warm);display:inline-block;animation:dotPulse 1.5s ease-in-out infinite; }
+@keyframes dotPulse { 0%,100%{opacity:0.3} 50%{opacity:1} }
+
+.toggle { width:44px;height:24px;background:#ddd;border-radius:12px;position:relative;cursor:pointer;transition:background .3s; }
+.toggle.on { background: var(--primary-blue); }
+.toggle::after { content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:transform .3s; }
+.toggle.on::after { transform: translateX(20px); }
+
+.star { color: #F0C060; font-size: 16px; }
+.star.empty { color: #ddd; }
+
+.tab-btn { padding: 6px 16px; border-radius: 20px; font-size: 12px; transition: all .2s; cursor: pointer; background: #eee; border: none; font-family: inherit; }
+.tab-btn.active { background: var(--primary-blue); color: #fff; }
+
+.boss-card { border-radius: 22px; padding: 16px; margin-bottom: 12px; transition: transform .1s; }
+.boss-card:active { transform: scale(0.98); }
+
+.badge-item { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 6px; border-radius: 16px; cursor: pointer; transition: all .2s; }
+.badge-item:hover { background: rgba(126,200,227,0.1); }
+.badge-item.locked { opacity: 0.35; filter: grayscale(1); }
+
+.input-sketch {
+  border: 2px solid #d4cfc6; border-radius: 14px; padding: 10px 14px;
+  font-family: inherit; font-size: 14px; color: var(--text-main);
+  background: #fff; outline: none; width: 100%; transition: border-color .2s;
+}
+.input-sketch:focus { border-color: var(--primary-blue); }
+.input-sketch::placeholder { color: #c4bfb4; }
+
+.btn-primary {
+  background: var(--primary-blue); color: #fff; border: none;
+  border-radius: 20px; padding: 10px 20px; font-family: inherit;
+  font-size: 14px; font-weight: bold; cursor: pointer; transition: all .15s;
+}
+.btn-primary:active { transform: scale(0.95); }
+.btn-warm { background: var(--accent-warm); }
+.btn-outline {
+  background: #fff; color: var(--primary-blue); border: 2px solid var(--primary-blue);
+  border-radius: 20px; padding: 8px 18px; font-family: inherit;
+  font-size: 13px; cursor: pointer; transition: all .15s;
+}
+.btn-outline:active { transform: scale(0.95); }
+.btn-sm { padding: 6px 14px; font-size: 11px; border-radius: 14px; }
+
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
+.shake { animation: shake .3s ease; }
+
+.task-done { text-decoration: line-through; opacity: 0.5; }
+.timer-digit { font-variant-numeric: tabular-nums; letter-spacing: 4px; }
+
+.editable-num { cursor: pointer; border-bottom: 1px dashed transparent; transition: border-color .2s; }
+.editable-num:hover { border-bottom-color: var(--primary-blue); }
+
+.diary-photo { width: 100%; max-height: 200px; object-fit: cover; border-radius: 12px; margin-top: 8px; }
+
+.avatar-upload { cursor: pointer; position: relative; }
+.avatar-upload:hover::after { content: '📷'; position: absolute; bottom:0;right:0; font-size:16px; }
+
+/* Card flip styles */
+.flip-container { perspective: 800px; }
+.flip-inner { position: relative; width: 100%; transition: transform 0.6s; transform-style: preserve-3d; }
+.flip-container.flipped .flip-inner { transform: rotateY(180deg); }
+.flip-front, .flip-back { backface-visibility: hidden; }
+.flip-front { }
+.flip-back { position: absolute; top:0; left:0; right:0; bottom:0; transform: rotateY(180deg);
+  display: flex; align-items: center; justify-content: center; flex-direction: column;
+  background: #f0faf0; border-radius: 22px; border: 2px dashed #A8D5A2; }
+.flip-back .done-stamp { font-size: 28px; font-weight: bold; color: #A8D5A2; transform: rotate(-12deg);
+  border: 3px solid #A8D5A2; border-radius: 12px; padding: 6px 18px; }
+
+@media (max-width: 420px) {
+  .phone { width: 100vw; height: 100vh; border-radius: 0; border: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="phone" id="app">
+  <div class="paper-texture"></div>
+
+  <!-- 状态栏 -->
+  <div class="px-5 pt-3 pb-1 flex justify-between items-center relative z-20 text-xs font-bold" style="flex-shrink:0;">
+    <span id="status-time">10:24</span>
+    <div class="flex gap-1.5 items-center">
+      <iconify-icon icon="mingcute:signal-line" width="14"></iconify-icon>
+      <iconify-icon icon="mingcute:wifi-line" width="14"></iconify-icon>
+      <iconify-icon icon="mingcute:battery-2-line" width="16"></iconify-icon>
+    </div>
+  </div>
+
+  <!-- 内容区域 (可滚动) -->
+  <div class="no-scrollbar" id="main-content">
+
+    <!-- ========== 1. 主页 HOME ========== -->
+    <div class="page active px-5 pt-2" id="page-home">
+      <div class="flex items-center gap-4 mt-1 mb-5">
+        <div class="avatar-upload flex-shrink-0" style="width:56px;height:56px;" onclick="document.getElementById('avatar-upload-input').click()">
+          <div class="w-full h-full rounded-full border-2 border-[#7EC8E3] p-0.5 bg-white sketch-shadow overflow-hidden">
+            <img id="home-avatar" class="w-full h-full rounded-full object-cover" src="" alt="头像" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="w-full h-full rounded-full bg-[#FFEAA7] flex items-center justify-center text-2xl" style="display:flex;">🐣</div>
+          </div>
+          <input type="file" class="hidden" id="avatar-upload-input" accept="image/*" onchange="uploadAvatar(this)">
+        </div>
+        <div>
+          <h1 class="text-xl font-bold cursor-pointer editable-num" id="home-name" onclick="editNickname()">Newmer 纽米</h1>
+          <p class="text-xs opacity-60" id="home-greeting">今天也是元气满满的一天！</p>
+        </div>
+      </div>
+
+      <!-- 成长等级面板 -->
+      <div class="sketch-card sketch-shadow mb-4">
+        <div class="flex justify-between items-end mb-2">
+          <div>
+            <span class="text-2xl font-bold" style="color:var(--primary-blue)" id="home-level">Lv.24</span>
+            <span class="text-xs text-gray-400 ml-1">岁</span>
+          </div>
+          <span class="text-xs text-gray-400" id="home-xp-text">成长经验 2450 / 3650</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="home-xp-bar" style="width:67%"></div>
+        </div>
+        <p class="text-xs mt-2 text-center" style="color:var(--accent-warm)" id="home-countdown">
+          <span class="countdown-dot mr-1"></span>距离下个生日（Lv.<span id="countdown-next-lv">25</span>）还有 <b id="countdown-days">120</b> 天 <span class="text-gray-400">| 每日自动+10</span>
+        </p>
+        <!-- 任务经验等级 -->
+        <div class="mt-3 pt-3 border-t border-gray-100">
+          <div class="flex justify-between items-end mb-1">
+            <span class="text-sm font-bold" style="color:var(--accent-warm)">任务等级 Lv.<span id="home-task-lv">0</span></span>
+            <span class="text-xs text-gray-400" id="home-task-xp-text">任务经验 1200 / 3650</span>
+          </div>
+          <div class="progress-bar" style="border-color:var(--accent-warm);height:8px;">
+            <div class="progress-fill warm" id="home-task-xp-bar" style="width:33%;height:100%;"></div>
+          </div>
+          <p class="text-xs text-gray-400 mt-1">满级10级 | 每3650经验升1级 | 用于解锁徽章</p>
+        </div>
+      </div>
+
+      <!-- 今日数据卡片 -->
+      <div class="grid grid-cols-3 gap-3 mb-5">
+        <div class="sketch-card sketch-shadow text-center py-3 cursor-pointer btn-tap" onclick="openCalendarView()">
+          <div class="text-xl font-bold" style="color:var(--primary-blue)" id="stat-tasks">0</div>
+          <div class="text-xs text-gray-400">完成任务</div>
+        </div>
+        <div class="sketch-card sketch-shadow text-center py-3">
+          <div class="text-xl font-bold text-orange-400" id="stat-xp">+0</div>
+          <div class="text-xs text-gray-400">今日任务经验</div>
+        </div>
+        <div class="sketch-card sketch-shadow text-center py-3">
+          <div class="text-xl font-bold text-green-400" id="stat-streak">0</div>
+          <div class="text-xs text-gray-400">连续打卡</div>
+        </div>
+      </div>
+
+      <!-- 2x2 快捷入口 -->
+      <div class="grid grid-cols-2 gap-3 mb-5">
+        <button class="btn-tap sketch-card sketch-shadow flex items-center gap-3 py-4 px-4" onclick="openTaskDialog()">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl" style="background:#FFE0B2">📝</div>
+          <div class="text-left"><div class="text-sm font-bold">新建任务</div><div class="text-xs text-gray-400">添加待办</div></div>
+        </button>
+        <button class="btn-tap sketch-card sketch-shadow flex items-center gap-3 py-4 px-4" onclick="switchPage('life')">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl" style="background:#C8E6C9">🌄</div>
+          <div class="text-left"><div class="text-sm font-bold">旅行BOSS</div><div class="text-xs text-gray-400">探索世界</div></div>
+        </button>
+        <button class="btn-tap sketch-card sketch-shadow flex items-center gap-3 py-4 px-4" onclick="switchPage('learn')">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl" style="background:#BBDEFB">⏱️</div>
+          <div class="text-left"><div class="text-sm font-bold">开始计时</div><div class="text-xs text-gray-400">专注学习</div></div>
+        </button>
+        <button class="btn-tap sketch-card sketch-shadow flex items-center gap-3 py-4 px-4" onclick="openDiaryDialog()">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl" style="background:#F8BBD0">🖊️</div>
+          <div class="text-left"><div class="text-sm font-bold">记录日常</div><div class="text-xs text-gray-400">小确幸</div></div>
+        </button>
+      </div>
+
+      <!-- 待办预览 -->
+      <div class="flex justify-between items-center mb-3">
+        <h2 class="font-bold text-base">今日关键挑战</h2>
+        <span class="text-xs cursor-pointer" style="color:var(--primary-blue)" onclick="switchPage('learn')">查看全部 →</span>
+      </div>
+      <div class="space-y-2.5" id="home-todos"></div>
+    </div>
+
+    <!-- ========== 2. LIFE 页面 ========== -->
+    <div class="page px-5 pt-2" id="page-life">
+      <div class="flex items-center gap-2 mt-3 mb-4">
+        <span class="text-2xl">🌿</span>
+        <h1 class="text-xl font-bold">生活 Life</h1>
+      </div>
+      <!-- 满意度 (月清零, 900满) -->
+      <div class="sketch-card sketch-shadow mb-4">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm font-medium">当前生活满意度</span>
+          <span class="text-2xl font-bold text-yellow-500" id="life-satisfaction">0</span>
+        </div>
+        <div class="progress-bar" style="border-color:#F0C060">
+          <div class="progress-fill yellow" id="life-satisfaction-bar" style="width:0%"></div>
+        </div>
+        <p class="text-xs text-gray-400 mt-2">月上限900 | 月初清零 | 日记+XP | 旅行BOSS+XP (与星级正相关)</p>
+      </div>
+
+      <!-- 旅行BOSS区域 -->
+      <div class="flex justify-between items-center mb-3">
+        <h2 class="font-bold text-base">🧗 旅行 BOSS</h2>
+        <button class="btn-outline btn-sm" onclick="openBossDialog('life')">+ 新BOSS</button>
+      </div>
+      <div id="life-bosses"></div>
+
+      <!-- 通关记录 -->
+      <div class="flex justify-between items-center mb-3 mt-4">
+        <h2 class="font-bold text-base">🏆 通关记录</h2>
+      </div>
+      <div id="life-boss-records" class="space-y-2"></div>
+
+      <!-- 日常记录 -->
+      <div class="flex justify-between items-center mb-3 mt-4">
+        <h2 class="font-bold text-base">📖 日常小确幸</h2>
+        <button class="btn-outline btn-sm" onclick="openDiaryDialog()">+ 写日记</button>
+      </div>
+      <div id="life-diaries" class="space-y-3"></div>
+    </div>
+
+    <!-- ========== 3. WORK 页面 ========== -->
+    <div class="page px-5 pt-2" id="page-work">
+      <div class="flex items-center gap-2 mt-3 mb-4">
+        <span class="text-2xl">💼</span>
+        <h1 class="text-xl font-bold">工作 Work</h1>
+      </div>
+      <!-- 财富值展示 -->
+      <div class="sketch-card sketch-shadow mb-4">
+        <div class="flex justify-around text-center">
+          <div class="flex flex-col items-center gap-1">
+            <span class="text-2xl">🪙</span>
+            <span class="font-bold text-lg editable-num" id="wealth-copper" onclick="editWealth('copper')">1,240</span>
+            <span class="text-xs text-gray-400">铜钱 (元)</span>
+          </div>
+          <div class="flex flex-col items-center gap-1">
+            <span class="text-2xl">🥈</span>
+            <span class="font-bold text-lg editable-num" id="wealth-silver" onclick="editWealth('silver')">45</span>
+            <span class="text-xs text-gray-400">银元宝 (千元)</span>
+          </div>
+          <div class="flex flex-col items-center gap-1">
+            <span class="text-2xl">🥇</span>
+            <span class="font-bold text-lg editable-num" id="wealth-gold" onclick="editWealth('gold')">2</span>
+            <span class="text-xs text-gray-400">金元宝 (万元)</span>
+          </div>
+        </div>
+        <div class="text-xs text-gray-400 text-center mt-3">
+          点击数字编辑 | 财富自动折算经验 | 每日任务XP上限+15 | BOSS经验与星级正相关(上限500)
+        </div>
+      </div>
+
+      <!-- 主业BOSS -->
+      <div class="flex justify-between items-center mb-3">
+        <h2 class="font-bold text-base">🏢 主业 BOSS</h2>
+        <button class="btn-outline btn-sm" onclick="openBossDialog('work-main')">+ 主BOSS</button>
+      </div>
+      <div id="work-main-bosses"></div>
+
+      <!-- 副业BOSS -->
+      <div class="flex justify-between items-center mb-3 mt-3">
+        <h2 class="font-bold text-base">🎨 副业 BOSS</h2>
+        <button class="btn-outline btn-sm" onclick="openBossDialog('work-side')">+ 副BOSS</button>
+      </div>
+      <div id="work-side-bosses"></div>
+
+      <!-- 工作待办 -->
+      <div class="flex justify-between items-center mb-3 mt-3">
+        <h2 class="font-bold text-base">📋 待办任务</h2>
+        <button class="btn-outline btn-sm" onclick="openTaskDialog('work')">+ 新待办</button>
+      </div>
+      <div id="work-todos" class="space-y-2.5"></div>
+    </div>
+
+    <!-- ========== 4. LEARN 页面 ========== -->
+    <div class="page px-5 pt-2" id="page-learn">
+      <div class="flex items-center gap-2 mt-3 mb-4">
+        <span class="text-2xl">📚</span>
+        <h1 class="text-xl font-bold">学习 Learn</h1>
+      </div>
+
+      <!-- 三属性圆环（关联对应类别任务经验） -->
+      <div class="sketch-card sketch-shadow mb-4">
+        <div class="flex justify-around">
+          <div class="flex items-center gap-2">
+            <div class="relative flex-shrink-0" style="width:56px;height:56px;">
+              <svg width="56" height="56" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#e8e4db" stroke-width="8"/>
+                <circle class="ring-circle" cx="50" cy="50" r="40" fill="none" stroke="#81C784" stroke-width="8"
+                  stroke-dasharray="251.2" id="ring-health" stroke-dashoffset="188.4" stroke-linecap="round"/>
+              </svg>
+              <div class="absolute inset-0 flex items-center justify-center text-xs font-bold" id="ring-health-text">0</div>
+            </div>
+            <div class="flex flex-col">
+              <span class="text-xs font-medium">❤️ 健康</span>
+              <span class="text-xs text-gray-400">月上限300</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="relative flex-shrink-0" style="width:56px;height:56px;">
+              <svg width="56" height="56" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#e8e4db" stroke-width="8"/>
+                <circle class="ring-circle" cx="50" cy="50" r="40" fill="none" stroke="#CE93D8" stroke-width="8"
+                  stroke-dasharray="251.2" id="ring-charm" stroke-dashoffset="213.5" stroke-linecap="round"/>
+              </svg>
+              <div class="absolute inset-0 flex items-center justify-center text-xs font-bold" id="ring-charm-text">0</div>
+            </div>
+            <div class="flex flex-col">
+              <span class="text-xs font-medium">💜 魅力</span>
+              <span class="text-xs text-gray-400">月上限300</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="relative flex-shrink-0" style="width:56px;height:56px;">
+              <svg width="56" height="56" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#e8e4db" stroke-width="8"/>
+                <circle class="ring-circle" cx="50" cy="50" r="40" fill="none" stroke="#64B5F6" stroke-width="8"
+                  stroke-dasharray="251.2" id="ring-wisdom" stroke-dashoffset="163.2" stroke-linecap="round"/>
+              </svg>
+              <div class="absolute inset-0 flex items-center justify-center text-xs font-bold" id="ring-wisdom-text">0</div>
+            </div>
+            <div class="flex flex-col">
+              <span class="text-xs font-medium">💙 智慧</span>
+              <span class="text-xs text-gray-400">月上限300</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 任务区切换 -->
+      <div class="flex gap-2 mb-3">
+        <button class="tab-btn active" id="tab-timer" onclick="switchLearnTab('timer')">⏱️ 计时模式</button>
+        <button class="tab-btn" id="tab-chapter" onclick="switchLearnTab('chapter')">📖 章节模式</button>
+      </div>
+      <div id="learn-timer-tasks" class="space-y-3"></div>
+      <div id="learn-chapter-tasks" class="space-y-3" style="display:none"></div>
+      <button class="btn-outline w-full mt-4" onclick="openTaskDialog('learn')">+ 添加学习任务</button>
+    </div>
+
+    <!-- ========== 5. 我的 页面 ========== -->
+    <div class="page px-5 pt-2" id="page-me">
+      <div class="flex flex-col items-center mt-4 mb-5">
+        <div class="avatar-upload mb-3" style="width:80px;height:80px;" onclick="document.getElementById('avatar-upload-input-me').click()">
+          <div class="w-full h-full rounded-full border-3 border-white sketch-shadow p-0.5 bg-white">
+            <img id="me-avatar" class="w-full h-full rounded-full object-cover" src="" alt="头像" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="w-full h-full rounded-full bg-[#FFEAA7] flex items-center justify-center text-3xl" style="display:flex;">🐣</div>
+          </div>
+          <input type="file" class="hidden" id="avatar-upload-input-me" accept="image/*" onchange="uploadAvatar(this)">
+        </div>
+        <h1 class="text-xl font-bold cursor-pointer editable-num" id="me-name" onclick="editNickname()">Newmer 纽米</h1>
+        <p class="text-xs text-gray-400 mt-1" id="me-info">Lv.24 | 已出生 0 天</p>
+        <button id="install-btn" class="btn-tap mt-3 px-5 py-2 rounded-full text-sm font-bold flex items-center gap-2" style="display:none;background:var(--primary-blue);color:#fff;border:none;" onclick="installApp()">
+          <iconify-icon icon="mingcute:download-line"></iconify-icon> 安装应用
+        </button>
+      </div>
+
+      <!-- 生日设置 -->
+      <div class="sketch-card sketch-shadow mb-3 flex items-center justify-between cursor-pointer btn-tap" onclick="openBirthdayDialog()">
+        <div class="flex items-center gap-3">
+          <span class="text-xl">🎂</span>
+          <div><div class="text-sm font-medium">我的生日</div><div class="text-xs text-gray-400" id="me-birthday">2000-05-14</div></div>
+        </div>
+        <iconify-icon icon="mingcute:right-line" class="text-gray-300"></iconify-icon>
+      </div>
+
+      <!-- 徽章墙 -->
+      <div class="sketch-card sketch-shadow mb-3">
+        <div class="flex justify-between items-center mb-3">
+          <h2 class="font-bold text-base">🏅 我的徽章</h2>
+          <button class="btn-outline btn-sm" onclick="openCustomBadgeDialog()">+ 自定义</button>
+        </div>
+        <div class="grid grid-cols-3 gap-3" id="badge-grid"></div>
+      </div>
+
+      <!-- 年度报告 -->
+      <div class="sketch-card sketch-shadow mb-3">
+        <div class="flex justify-between items-center">
+          <div class="flex items-center gap-3">
+            <span class="text-xl">📊</span>
+            <div><div class="text-sm font-medium">年度成长报告</div><div class="text-xs text-gray-400" id="year-report-label">查看各模块经验分布</div></div>
+          </div>
+          <button class="btn-outline btn-sm" onclick="showYearReport()">查看</button>
+        </div>
+      </div>
+
+      <!-- 设置 -->
+      <div class="sketch-card sketch-shadow mb-3 overflow-hidden">
+        <div class="py-3 px-1 border-b border-gray-100 flex justify-between items-center btn-tap">
+          <div class="flex items-center gap-3">
+            <iconify-icon icon="mingcute:user-setting-line" width="20" style="color:var(--primary-blue)"></iconify-icon>
+            <span class="text-sm">账号设置</span>
+          </div>
+          <iconify-icon icon="mingcute:right-line" class="text-gray-300"></iconify-icon>
+        </div>
+        <div class="py-3 px-1 flex justify-between items-center btn-tap" onclick="resetAllData()">
+          <div class="flex items-center gap-3">
+            <iconify-icon icon="mingcute:refresh-3-line" width="20" style="color:var(--accent-warm)"></iconify-icon>
+            <span class="text-sm">重置数据</span>
+          </div>
+          <iconify-icon icon="mingcute:right-line" class="text-gray-300"></iconify-icon>
+        </div>
+      </div>
+      <button class="w-full py-3 bg-white text-red-400 font-bold rounded-2xl sketch-shadow btn-tap mb-8" onclick="alert('期待与你再次相遇 🌟')">退出登录</button>
+    </div>
+  </div>
+
+  <!-- 底部导航栏 -->
+  <div class="flex-shrink-0 bg-white/90 backdrop-blur-sm border-t-2 border-[#7EC8E3]/10 px-3 flex justify-around items-center z-50" style="padding-top:6px;padding-bottom:8px;">
+    <button class="nav-item active flex flex-col items-center gap-0.5" id="nav-home" onclick="switchPage('home')">
+      <iconify-icon icon="mingcute:home-6-line" width="22"></iconify-icon>
+      <span class="text-xs font-bold">主页</span>
+      <div class="nav-dot w-1 h-1 rounded-full opacity-0" style="background:var(--primary-blue)"></div>
+    </button>
+    <button class="nav-item flex flex-col items-center gap-0.5 text-gray-400" id="nav-life" onclick="switchPage('life')">
+      <iconify-icon icon="mingcute:leaf-line" width="22"></iconify-icon>
+      <span class="text-xs font-bold">Life</span>
+      <div class="nav-dot w-1 h-1 rounded-full opacity-0" style="background:var(--primary-blue)"></div>
+    </button>
+    <button class="nav-item flex flex-col items-center gap-0.5 text-gray-400" id="nav-work" onclick="switchPage('work')">
+      <iconify-icon icon="mingcute:briefcase-line" width="22"></iconify-icon>
+      <span class="text-xs font-bold">Work</span>
+      <div class="nav-dot w-1 h-1 rounded-full opacity-0" style="background:var(--primary-blue)"></div>
+    </button>
+    <button class="nav-item flex flex-col items-center gap-0.5 text-gray-400" id="nav-learn" onclick="switchPage('learn')">
+      <iconify-icon icon="mingcute:book-2-line" width="22"></iconify-icon>
+      <span class="text-xs font-bold">Learn</span>
+      <div class="nav-dot w-1 h-1 rounded-full opacity-0" style="background:var(--primary-blue)"></div>
+    </button>
+    <button class="nav-item flex flex-col items-center gap-0.5 text-gray-400" id="nav-me" onclick="switchPage('me')">
+      <iconify-icon icon="mingcute:user-2-line" width="22"></iconify-icon>
+      <span class="text-xs font-bold">我的</span>
+      <div class="nav-dot w-1 h-1 rounded-full opacity-0" style="background:var(--primary-blue)"></div>
+    </button>
+  </div>
+</div>
+
+<!-- 弹窗容器 -->
+<div id="modal-container"></div>
+<!-- 动画层 -->
+<div id="fx-layer" style="position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:10000;"></div>
+
+<script>
+// ============================================================
+// NEWME APP v2 - 双经验系统 + 所有升级
+// ============================================================
+const CIRC = 251.2;
+
+// BOSS图标池
+const BOSS_ICONS = {
+  life: ['🏔️','🏝️','🏕️','🗻','🌋','🏖️','🛤️','🏞️','🌄','🗺️','🧭','⛺','🌌','🏰','🗼'],
+  'work-main': ['💻','📊','📈','🏢','📋','🗂️','📝','💡','🔧','⚙️','📡','🔌','🖥️','📱','⌨️'],
+  'work-side': ['🎨','🎵','✍️','📷','🎬','🎤','🍳','🧵','🪚','🔮','🎯','📿','🖌️','🎸','🌿'],
+};
+
+function randomBossIcon(module) {
+  const pool = BOSS_ICONS[module] || BOSS_ICONS['work-main'];
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// ---- 默认初始状态 ----
+function createDefaultState() {
+  const today = new Date().toISOString().split('T')[0];
+  return {
+    player: {
+      name: 'Newmer 纽米',
+      birthday: '2000-05-14',
+      joinDate: '2025-02-14',
+      avatar: '',
+      copper: 0, silver: 0, gold: 0,
+      satisfaction: 0,
+      attributes: { health: 0, charm: 0, wisdom: 0 },
+      streak: 0,
+      lastActiveDate: today,
+      lastActiveMonth: '',
+      tasksDoneToday: 0,
+      // 双经验系统
+      growthXP: 0,
+      taskXP: 0,
+      taskXPTotal: 0,
+      xpToday: 0,
+      // 任务经验按模块分布
+      xpByModule: { life: 0, work: 0, learn: 0 },
+      // 每日XP上限追踪
+      dailyCaps: {
+        lifeDiary: 0, lifeBoss: 0,
+        workTodo: 0, workBoss: 0,
+        learnHealth: 0, learnCharm: 0, learnWisdom: 0,
+        date: today
+      },
+      // 日历记录: { 'YYYY-MM-DD': [{taskTitle, xp, module, time}] }
+      calendarLog: {},
+    },
+    tasks: [
+      { id:'t1', module:'learn', learnCategory:'wisdom', type:'timer', title:'英语口语练习', difficulty:3, baseXP:1, recurrence:'daily', completed:false, timerTarget:1500, timerAccumulated:0, timerRunning:false, timerStartTs:null },
+      { id:'t2', module:'learn', learnCategory:'wisdom', type:'chapter', title:'《心理学导论》阅读', difficulty:4, baseXP:1, recurrence:'weekly', completed:false, chapterTotal:10, chapterDone:[1,2,3] },
+      { id:'t3', module:'learn', learnCategory:'health', type:'timer', title:'晨间冥想', difficulty:2, baseXP:1, recurrence:'daily', completed:false, timerTarget:900, timerAccumulated:0, timerRunning:false, timerStartTs:null },
+      { id:'t4', module:'work', type:'todo', title:'整理会议纪要', difficulty:2, baseXP:1, recurrence:'daily', completed:false, rewardCopper:20 },
+      { id:'t5', module:'work', type:'todo', title:'回复客户邮件', difficulty:1, baseXP:1, recurrence:'daily', completed:false, rewardCopper:10 },
+    ],
+    bosses: [
+      { id:'b1', module:'life', name:'拖延之山', difficulty:4, hp:70, maxHP:100, rewardXP:200, rewardType:'satisfaction', rewardAmount:40, icon:'🏔️', cycle:'monthly', clearDate:null, clearLocation:'' },
+      { id:'b2', module:'work-main', name:'季度Q2复盘', difficulty:4, hp:45, maxHP:100, rewardXP:100, rewardType:'copper', rewardAmount:500, icon:'💻', cycle:'quarterly', clearDate:null, clearLocation:'' },
+      { id:'b3', module:'work-side', name:'插画订单 #03', difficulty:3, hp:80, maxHP:100, rewardXP:50, rewardType:'silver', rewardAmount:5, icon:'🎨', cycle:'weekly', clearDate:null, clearLocation:'' },
+    ],
+    diaries: [
+      { id:'d1', date:'2026-05-14', content:'今天在楼下公园看到了一只很可爱的小猫，它还蹭了我的腿。', mood:'😊', photo:'' },
+      { id:'d2', date:'2026-05-13', content:'尝试了新的燕麦拿铁，味道出乎意料的好，心情愉悦。', mood:'☕', photo:'' },
+    ],
+    badges: [
+      { id:'bg1',name:'初生牛犊',icon:'🐣',desc:'完成第一年成长',unlocked:false,isCustom:false},
+      { id:'bg2',name:'旅行家',icon:'🌍',desc:'通关5个旅行BOSS',unlocked:false,isCustom:false},
+      { id:'bg3',name:'工作狂',icon:'🔥',desc:'Work模块任务XP占比超50%',unlocked:false,isCustom:false},
+      { id:'bg4',name:'学霸',icon:'🎓',desc:'Learn模块任务XP占比超50%',unlocked:false,isCustom:false},
+      { id:'bg5',name:'生活家',icon:'🌿',desc:'Life模块任务XP占比超50%',unlocked:false,isCustom:false},
+      { id:'bg6',name:'均衡大师',icon:'⚖️',desc:'三大模块均衡发展',unlocked:false,isCustom:false},
+      { id:'bg7',name:'打卡王',icon:'👑',desc:'连续打卡100天',unlocked:false,isCustom:false},
+      { id:'bg8',name:'斜杠青年',icon:'💪',desc:'Work+Learn超70%',unlocked:false,isCustom:false},
+      { id:'bg9',name:'收藏家',icon:'🏆',desc:'解锁5个以上徽章',unlocked:false,isCustom:false},
+    ],
+    customBadges: [],
+  };
+}
+
+let S = createDefaultState();
+
+// ---- 持久化 ----
+function save() { localStorage.setItem('newme_state_v2', JSON.stringify(S)); }
+function load() {
+  const raw = localStorage.getItem('newme_state_v2');
+  if (raw) { try { S = JSON.parse(raw); } catch(e) { S = createDefaultState(); } }
+  else { S = createDefaultState(); }
+}
+load();
+function ensureDefaults() {
+  const def = createDefaultState();
+  S.player = Object.assign({}, def.player, S.player);
+  S.player.attributes = Object.assign({}, def.player.attributes, S.player.attributes||{});
+  if (S.player.lastActiveMonth === undefined) S.player.lastActiveMonth = '';
+  if (!S.player.monthlyAttrs) S.player.monthlyAttrs = { health: 0, charm: 0, wisdom: 0 };
+  if (S.player.satisfaction === undefined || S.player.satisfaction > 900) S.player.satisfaction = def.player.satisfaction;
+  S.player.xpByModule = Object.assign({}, def.player.xpByModule, S.player.xpByModule||{});
+  S.player.dailyCaps = Object.assign({}, def.player.dailyCaps, S.player.dailyCaps||{});
+  if (!S.player.calendarLog) S.player.calendarLog = {};
+  if (!S.player.growthXP && S.player.xpTotal) { S.player.growthXP = S.player.xpTotal; S.player.taskXP = 0; S.player.taskXPTotal = 0; }
+  if (S.player.growthXP === undefined) S.player.growthXP = 0;
+  if (S.player.taskXP === undefined) S.player.taskXP = 0;
+  if (S.player.taskXPTotal === undefined) S.player.taskXPTotal = S.player.taskXP;
+  if (!S.customBadges) S.customBadges = [];
+  if (!S.player.avatar) S.player.avatar = '';
+  S.tasks.forEach(t => {
+    if (t.type==='timer' && t.timerAccumulated===undefined) t.timerAccumulated=0;
+    if (t.type==='timer' && t.timerRunning===undefined) t.timerRunning=false;
+    if (t.type==='timer' && t.timerStartTs===undefined) t.timerStartTs=null;
+    if (t.type==='chapter' && !t.chapterDone) t.chapterDone=[];
+    if (t.module==='learn' && !t.learnCategory) t.learnCategory='wisdom';
+  });
+  S.bosses.forEach(b => { if(!b.icon) b.icon = randomBossIcon(b.module); if(!b.clearDate) b.clearDate=null; if(!b.clearLocation) b.clearLocation=''; });
+  if(!S.diaries) S.diaries = [];
+  S.diaries.forEach(d => { if(d.photo===undefined) d.photo=''; });
+}
+ensureDefaults();
+
+// ---- 工具函数 ----
+function uid() { return 'id'+Date.now()+Math.random().toString(36).slice(2,8); }
+function todayStr() { return new Date().toISOString().split('T')[0]; }
+function daysBetween(d1,d2) { return Math.floor((new Date(d2)-new Date(d1))/86400000); }
+function fmt(n) { return (n||0).toLocaleString('zh-CN'); }
+function getLevel() {
+  const birth = new Date(S.player.birthday);
+  const now = new Date();
+  let age = now.getFullYear() - birth.getFullYear();
+  const m = now.getMonth() - birth.getMonth();
+  if (m < 0 || (m===0 && now.getDate() < birth.getDate())) age--;
+  return Math.max(1, age);
+}
+function daysUntilBirthday() {
+  const birth = new Date(S.player.birthday);
+  const now = new Date();
+  let next = new Date(now.getFullYear(), birth.getMonth(), birth.getDate());
+  if (next <= now) next.setFullYear(next.getFullYear()+1);
+  return Math.ceil((next - now) / 86400000);
+}
+function getDifficultyStars(lv) { let s=''; for(let i=1;i<=5;i++) s+=i<=lv?'⭐':''; return s; }
+function getDifficultyLabel(lv) { const lb=['','简单','普通','困难','极难','地狱']; return lb[lv]||'普通'; }
+
+function getLearnCategoryName(c) {
+  const map = { health:'❤️ 健康', charm:'💜 魅力', wisdom:'💙 智慧' };
+  return map[c] || c;
+}
+function getLearnCategoryColor(c) {
+  const map = { health:'#81C784', charm:'#CE93D8', wisdom:'#64B5F6' };
+  return map[c] || '#7EC8E3';
+}
+
+// ---- 双经验系统 ----
+// 成长经验: 每日自动+10, 3650/年, 保证生日升级
+function addGrowthXP(amount) {
+  S.player.growthXP = (S.player.growthXP || 0) + amount;
+  updateAllUI();
+}
+
+// 任务经验: 从任务/BOSS获取, 每3650升1级(最高10级)
+function addTaskXP(amount, module, category) {
+  amount = Math.max(0, Math.floor(amount));
+  if (amount <= 0) return 0;
+
+  // 检查每日上限
+  const caps = S.player.dailyCaps;
+  const today = todayStr();
+  if (caps.date !== today) resetDailyCaps();
+
+  let actualAdd = amount;
+
+  if (module === 'life') {
+    if (category === 'diary') {
+      const cap = 15;
+      const avail = Math.max(0, cap - (caps.lifeDiary||0));
+      actualAdd = Math.min(amount, avail);
+      caps.lifeDiary = (caps.lifeDiary||0) + actualAdd;
+    } else if (category === 'boss') {
+      const cap = 500;
+      const avail = Math.max(0, cap - (caps.lifeBoss||0));
+      actualAdd = Math.min(amount, avail);
+      caps.lifeBoss = (caps.lifeBoss||0) + actualAdd;
+    }
+  } else if (module === 'work') {
+    if (category === 'todo') {
+      const cap = 15;
+      const avail = Math.max(0, cap - (caps.workTodo||0));
+      actualAdd = Math.min(amount, avail);
+      caps.workTodo = (caps.workTodo||0) + actualAdd;
+    } else if (category === 'boss') {
+      const cap = 500;
+      const avail = Math.max(0, cap - (caps.workBoss||0));
+      actualAdd = Math.min(amount, avail);
+      caps.workBoss = (caps.workBoss||0) + actualAdd;
+    }
+  } else if (module === 'learn') {
+    const cat = category || 'wisdom';
+    const cap = 10;
+    const capField = cat === 'health' ? 'learnHealth' : cat === 'charm' ? 'learnCharm' : 'learnWisdom';
+    const avail = Math.max(0, cap - (caps[capField]||0));
+    actualAdd = Math.min(amount, avail);
+    caps[capField] = (caps[capField]||0) + actualAdd;
+    // Track monthly attribute progress (max 300)
+    if (!S.player.monthlyAttrs) S.player.monthlyAttrs = { health: 0, charm: 0, wisdom: 0 };
+    const attrKey = cat === 'health' ? 'health' : cat === 'charm' ? 'charm' : 'wisdom';
+    S.player.monthlyAttrs[attrKey] = Math.min(300, (S.player.monthlyAttrs[attrKey]||0) + actualAdd);
+  }
+
+  if (actualAdd <= 0) {
+    spawnFloatReward('⚡ 今日该类别经验已达上限', '#FF9800');
+    return 0;
+  }
+
+  S.player.taskXP = (S.player.taskXP || 0) + actualAdd;
+  S.player.taskXPTotal = (S.player.taskXPTotal || 0) + actualAdd;
+  S.player.xpToday = (S.player.xpToday || 0) + actualAdd;
+
+  // 分布记录
+  const mod = module === 'life' ? 'life' : module === 'work' ? 'work' : 'learn';
+  S.player.xpByModule[mod] = (S.player.xpByModule[mod]||0) + actualAdd;
+
+  // 任务经验升级
+  const newTaskLv = Math.min(10, Math.floor(S.player.taskXPTotal / 3650));
+  const oldTaskLv = S.player._lastTaskLv || 0;
+  if (newTaskLv > oldTaskLv) {
+    S.player._lastTaskLv = newTaskLv;
+    spawnFloatReward(`🎖️ 任务等级提升! Lv.${newTaskLv}`, '#E9967A');
+  }
+  // 保持taskXP在0-3650范围内用于进度条显示
+  S.player.taskXP = S.player.taskXPTotal % 3650;
+
+  return actualAdd;
+}
+
+function getTaskLevel() {
+  return Math.min(10, Math.floor((S.player.taskXPTotal || 0) / 3650));
+}
+
+function resetDailyCaps() {
+  S.player.dailyCaps = {
+    lifeDiary: 0, lifeBoss: 0,
+    workTodo: 0, workBoss: 0,
+    learnHealth: 0, learnCharm: 0, learnWisdom: 0,
+    date: todayStr()
+  };
+}
+
+// BOSS经验=星级*100 (不可自定义,上限500)
+function getBossXP(difficulty) {
+  return Math.min(500, difficulty * 100);
+}
+
+// ---- 财富系统 ----
+function addWealth(type, amount) {
+  if (type==='copper') S.player.copper += amount;
+  else if (type==='silver') S.player.silver += amount;
+  else if (type==='gold') S.player.gold += amount;
+  while (S.player.copper >= 10000) { S.player.copper -= 10000; S.player.silver++; }
+  while (S.player.silver >= 1000) { S.player.silver -= 1000; S.player.gold++; }
+  updateAllUI();
+  save();
+}
+
+function editWealth(type) {
+  const val = type==='copper' ? S.player.copper : type==='silver' ? S.player.silver : S.player.gold;
+  const label = type==='copper' ? '铜钱 (元)' : type==='silver' ? '银元宝 (千元)' : '金元宝 (万元)';
+  const newVal = prompt(`编辑${label}:`, val);
+  if (newVal !== null && !isNaN(parseInt(newVal))) {
+    if (type==='copper') S.player.copper = Math.max(0, parseInt(newVal));
+    else if (type==='silver') S.player.silver = Math.max(0, parseInt(newVal));
+    else S.player.gold = Math.max(0, parseInt(newVal));
+    updateAllUI(); save();
+  }
+}
+
+// ---- 昵称与头像 ----
+function editNickname() {
+  const newName = prompt('编辑昵称:', S.player.name);
+  if (newName && newName.trim()) {
+    S.player.name = newName.trim();
+    updateAllUI(); save();
+  }
+}
+
+function uploadAvatar(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    S.player.avatar = e.target.result;
+    updateAllUI(); save();
+    spawnFloatReward('📷 头像已更新!', '#7EC8E3');
+  };
+  reader.readAsDataURL(file);
+}
+
+// ---- 满意度 ----
+function addSatisfaction(amount) {
+  S.player.satisfaction = Math.min(900, (S.player.satisfaction||0) + amount);
+  updateAllUI();
+}
+
+// ---- BOSS系统 ----
+function attackBoss(bossId, amount, isPhotoAttack) {
+  const boss = S.bosses.find(b => b.id===bossId);
+  if (!boss || boss.hp <= 0) return;
+  const isLifeBoss = boss.module === 'life';
+  if (isLifeBoss && !isPhotoAttack && boss.hp <= 1) return;
+  amount = amount || (5 + Math.floor(Math.random()*15));
+  if (isLifeBoss && !isPhotoAttack) {
+    amount = Math.min(amount, boss.hp - 1);
+  }
+  boss.hp = Math.max(0, boss.hp - amount);
+
+  const el = document.getElementById('boss-'+bossId);
+  if (el) { el.classList.add('shake'); setTimeout(()=>el.classList.remove('shake'),300); }
+
+  if (boss.hp <= 0) {
+    // Boss defeated!
+    const xpGain = getBossXP(boss.difficulty);
+    const actualXP = addTaskXP(xpGain, boss.module==='life'?'life':'work', 'boss');
+    if (boss.module === 'life') {
+      addSatisfaction(boss.rewardAmount||5);
+    } else {
+      addWealth(boss.rewardType||'copper', boss.rewardAmount||100);
+    }
+    S.player.tasksDoneToday++;
+    // Record clear
+    boss.clearDate = todayStr();
+    if (!boss.clearLocation) boss.clearLocation = '';
+    // Log to calendar
+    logToCalendar(boss.name, actualXP, boss.module);
+    showBossClearPopup(boss);
+  }
+  updateAllUI(); save();
+}
+
+function reviveBoss(bossId) {
+  const boss = S.bosses.find(b => b.id===bossId);
+  if (!boss) return;
+  boss.hp = boss.maxHP;
+  boss.clearDate = null;
+  boss.clearLocation = '';
+  updateAllUI(); save();
+  spawnFloatReward('🔄 BOSS已复活!', '#E57373');
+}
+
+// ---- 任务系统 ----
+function completeTask(taskId) {
+  const task = S.tasks.find(t => t.id===taskId);
+  if (!task || task.completed) return;
+  task.completed = true;
+
+  // All tasks: XP = difficulty (1 star = 1 XP)
+  let xpEarned = task.difficulty;
+
+  const mod = task.module;
+  const cat = task.type==='chapter' ? 'chapter' : task.type==='timer' ? 'timer' : 'todo';
+
+  const actualXP = addTaskXP(xpEarned, mod, task.learnCategory || cat);
+
+  S.player.tasksDoneToday++;
+
+  if (task.rewardCopper) addWealth('copper', task.rewardCopper);
+  if (task.rewardSilver) addWealth('silver', task.rewardSilver);
+
+  logToCalendar(task.title, actualXP, mod);
+
+  spawnFloatReward(`✅ +${actualXP} XP`, '#81C784');
+  updateAllUI(); save();
+}
+
+function flipTask(taskId) {
+  const task = S.tasks.find(t => t.id===taskId);
+  if (!task) return;
+  if (task.recurrence && task.recurrence !== 'none') {
+    // Recurring tasks can be flipped back
+    task.completed = !task.completed;
+    if (!task.completed) {
+      if (task.type==='timer') { task.timerAccumulated = 0; task.timerRunning = false; task.timerStartTs = null; }
+      if (task.type==='chapter') { task.chapterDone = []; }
+      spawnFloatReward('🔄 任务已重新开始', '#7EC8E3');
+    }
+  } else {
+    // One-time tasks: if completed, can't flip back
+    if (task.completed) { spawnFloatReward('⚠ 一次性任务无法重新开始', '#FF9800'); return; }
+    task.completed = true;
+  }
+  updateAllUI(); save();
+}
+
+function deleteTask(taskId) {
+  if (!confirm('确定要删除这个任务吗？')) return;
+  S.tasks = S.tasks.filter(t => t.id !== taskId);
+  updateAllUI(); save();
+  spawnFloatReward('🗑️ 任务已删除', '#E57373');
+}
+
+function openEditTaskDialog(taskId) {
+  const task = S.tasks.find(t => t.id===taskId);
+  if (!task) return;
+  const isLearn = task.module === 'learn';
+  const html = `
+    <div class="modal-mask" id="edit-task-dialog-mask" onclick="this.remove()"><div class="modal-box" onclick="event.stopPropagation()">
+      <h2 class="font-bold text-lg mb-4">✏️ 编辑任务</h2>
+      <div class="space-y-3">
+        <input class="input-sketch" id="edit-task-title" value="${task.title.replace(/"/g,'&quot;')}" placeholder="任务名称">
+        <div class="flex gap-2 items-center">
+          <span class="text-xs">难度:</span>
+          <select class="input-sketch flex-1" id="edit-task-difficulty">
+            ${[1,2,3,4,5].map(n=>`<option value="${n}" ${task.difficulty===n?'selected':''}>${'⭐'.repeat(n)} ${['','简单','普通','困难','极难','地狱'][n]}</option>`).join('')}
+          </select>
+        </div>
+        ${(task.module!=='work' && task.module!=='learn')?`
+        <div class="flex gap-2 items-center">
+          <span class="text-xs">经验:</span>
+          <input class="input-sketch flex-1" id="edit-task-xp" type="number" value="${task.baseXP}" min="1">
+        </div>`:`<p class="text-xs text-gray-400">经验=难度星级 (${task.difficulty}星=${task.difficulty}XP)</p>`}
+        <div class="flex gap-2 items-center">
+          <span class="text-xs">循环:</span>
+          <select class="input-sketch flex-1" id="edit-task-recurrence">
+            <option value="none" ${task.recurrence==='none'?'selected':''}>无循环</option>
+            <option value="daily" ${task.recurrence==='daily'?'selected':''}>每天</option>
+            <option value="weekly" ${task.recurrence==='weekly'?'selected':''}>每周</option>
+            <option value="monthly" ${task.recurrence==='monthly'?'selected':''}>每月</option>
+          </select>
+        </div>
+        ${task.type==='timer'?`
+          <div><span class="text-xs">目标时长 (秒):</span>
+          <input class="input-sketch mt-1" id="edit-task-timer" type="number" value="${task.timerTarget||1500}" min="60"></div>
+        `:''}
+        ${task.type==='chapter'?`
+          <div><span class="text-xs">总章节数:</span>
+          <input class="input-sketch mt-1" id="edit-task-chapter" type="number" value="${task.chapterTotal||10}" min="1"></div>
+        `:''}
+        ${task.module==='work'?`
+          <div><span class="text-xs">铜钱奖励:</span>
+          <input class="input-sketch mt-1" id="edit-task-copper" type="number" value="${task.rewardCopper||0}" min="0"></div>
+        `:''}
+        <button class="btn-primary w-full mt-3" onclick="saveTaskEdit('${taskId}')">保存修改</button>
+      </div>
+    </div></div>`;
+  document.getElementById('modal-container').innerHTML = html;
+}
+
+function saveTaskEdit(taskId) {
+  const task = S.tasks.find(t => t.id===taskId);
+  if (!task) return;
+  const title = document.getElementById('edit-task-title').value.trim();
+  if (!title) { alert('请输入任务名称'); return; }
+  task.title = title;
+  task.difficulty = parseInt(document.getElementById('edit-task-difficulty').value);
+  task.baseXP = (task.module==='work'||task.module==='learn') ? 1 : parseInt(document.getElementById('edit-task-xp').value);
+  task.recurrence = document.getElementById('edit-task-recurrence').value;
+  if (task.type==='timer') task.timerTarget = parseInt(document.getElementById('edit-task-timer')?.value) || 1500;
+  if (task.type==='chapter') task.chapterTotal = parseInt(document.getElementById('edit-task-chapter')?.value) || 10;
+  if (task.module==='work') task.rewardCopper = parseInt(document.getElementById('edit-task-copper')?.value) || 0;
+  document.getElementById('edit-task-dialog-mask')?.remove();
+  updateAllUI(); save();
+  spawnFloatReward('✅ 任务已更新', '#7EC8E3');
+}
+
+function logToCalendar(title, xp, module) {
+  const date = todayStr();
+  if (!S.player.calendarLog) S.player.calendarLog = {};
+  if (!S.player.calendarLog[date]) S.player.calendarLog[date] = [];
+  S.player.calendarLog[date].push({
+    title, xp, module,
+    time: new Date().toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'})
+  });
+}
+
+function updateChapter(taskId, chapterNum) {
+  const task = S.tasks.find(t => t.id===taskId);
+  if (!task || task.type!=='chapter') return;
+  if (!task.chapterDone) task.chapterDone = [];
+  const idx = task.chapterDone.indexOf(chapterNum);
+  if (idx>=0) { task.chapterDone.splice(idx,1); }
+  else { task.chapterDone.push(chapterNum); }
+  updateAllUI(); save();
+}
+
+// ---- 计时器 ----
+function toggleTimer(taskId) {
+  const task = S.tasks.find(t => t.id===taskId);
+  if (!task || task.type!=='timer') return;
+  if (task.timerRunning) {
+    const elapsed = Math.floor((Date.now()-task.timerStartTs)/1000);
+    task.timerAccumulated += elapsed;
+    task.timerRunning = false; task.timerStartTs = null;
+  } else {
+    task.timerRunning = true; task.timerStartTs = Date.now();
+  }
+  updateAllUI(); save();
+}
+function resetTimer(taskId) {
+  const task = S.tasks.find(t => t.id===taskId);
+  if (!task || task.type!=='timer') return;
+  task.timerRunning = false; task.timerStartTs = null; task.timerAccumulated = 0;
+  updateAllUI(); save();
+}
+function retroRecord(taskId, seconds) {
+  const task = S.tasks.find(t => t.id===taskId);
+  if (!task || task.type!=='timer') return;
+  task.timerAccumulated += seconds;
+  updateAllUI(); save();
+  spawnFloatReward(`+${seconds}s 补录`, '#64B5F6');
+}
+function getTimerDisplaySeconds(task) {
+  let sec = task.timerAccumulated || 0;
+  if (task.timerRunning && task.timerStartTs) {
+    sec += Math.floor((Date.now()-task.timerStartTs)/1000);
+  }
+  return sec;
+}
+function formatTimer(sec) {
+  const h=Math.floor(sec/3600), m=Math.floor((sec%3600)/60), s=sec%60;
+  return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+}
+
+// ---- 日记系统(支持照片) ----
+function addDiary(content, mood, photo) {
+  S.diaries.unshift({ id:uid(), date:todayStr(), content, mood:mood||'😊', photo:photo||'' });
+  addSatisfaction(10);
+  // 日记经验: 图文+10XP, 纯文字+5XP (每日上限15)
+  const diaryXP = photo ? 10 : 5;
+  const actualXP = addTaskXP(diaryXP, 'life', 'diary');
+  logToCalendar('日记: '+content.slice(0,15), actualXP, 'life');
+  updateAllUI(); save();
+}
+
+// ---- 徽章系统 ----
+function checkBadges() {
+  const byMod = S.player.xpByModule||{life:0,work:0,learn:0};
+  const total = (byMod.life||0)+(byMod.work||0)+(byMod.learn||0)||1;
+  const lifePct = (byMod.life||0)/total*100, workPct = (byMod.work||0)/total*100, learnPct = (byMod.learn||0)/total*100;
+  const completedBosses = S.bosses.filter(b=>b.hp<=0).length;
+  const checks = {
+    bg1: S.player.taskXPTotal > 0,
+    bg2: completedBosses >= 5,
+    bg3: workPct > 50,
+    bg4: learnPct > 50,
+    bg5: lifePct > 50,
+    bg6: lifePct>25&&lifePct<40 && workPct>25&&workPct<40 && learnPct>25&&learnPct<40,
+    bg7: S.player.streak >= 100,
+    bg8: (workPct+learnPct) > 70,
+    bg9: S.badges.filter(b=>b.unlocked).length >= 5,
+  };
+  S.badges.forEach(b=>{
+    if (!b.isCustom && checks[b.id] && !b.unlocked) {
+      b.unlocked = true; spawnFloatReward(`🏅 解锁徽章: ${b.name}!`,'#F0C060');
+    }
+  });
+}
+function addCustomBadge(name,icon) {
+  if (S.customBadges.length>=3) { alert('最多自定义3个徽章哦~'); return; }
+  S.customBadges.push({ id:uid(), name, icon:icon||'⭐', desc:'自定义徽章', unlocked:true, isCustom:true });
+  updateAllUI(); save();
+}
+function removeCustomBadge(id) {
+  S.customBadges = S.customBadges.filter(b=>b.id!==id);
+  updateAllUI(); save();
+}
+
+// ---- 年度报告 ----
+function showYearReport() {
+  const byMod = S.player.xpByModule||{life:0,work:0,learn:0};
+  const total = (byMod.life||0)+(byMod.work||0)+(byMod.learn||0)||1;
+  const html = `
+    <div class="modal-mask" onclick="this.remove()"><div class="modal-box" onclick="event.stopPropagation()" style="text-align:center;">
+      <h2 class="font-bold text-lg mb-4">📊 年度成长报告</h2>
+      <div class="space-y-3 mb-4">
+        <div><div class="flex justify-between text-xs mb-1"><span>🌿 Life 任务经验</span><span>${Math.round((byMod.life||0)/total*100)}%</span></div>
+          <div class="progress-bar" style="border-color:#81C784"><div class="progress-fill green" style="width:${Math.round((byMod.life||0)/total*100)}%"></div></div></div>
+        <div><div class="flex justify-between text-xs mb-1"><span>💼 Work 任务经验</span><span>${Math.round((byMod.work||0)/total*100)}%</span></div>
+          <div class="progress-bar" style="border-color:#FFB74D"><div class="progress-fill" style="background:#FFB74D;width:${Math.round((byMod.work||0)/total*100)}%"></div></div></div>
+        <div><div class="flex justify-between text-xs mb-1"><span>📚 Learn 任务经验</span><span>${Math.round((byMod.learn||0)/total*100)}%</span></div>
+          <div class="progress-bar" style="border-color:#64B5F6"><div class="progress-fill" style="background:#64B5F6;width:${Math.round((byMod.learn||0)/total*100)}%"></div></div></div>
+      </div>
+      <p class="text-xs text-gray-400 mb-1">成长经验: ${fmt(S.player.growthXP||0)} / 3650</p>
+      <p class="text-xs text-gray-400 mb-3">任务经验: ${fmt(S.player.taskXPTotal||0)} XP | 任务等级 Lv.${getTaskLevel()}/10</p>
+      <button class="btn-primary" onclick="this.closest('.modal-mask').remove()">知道了</button>
+    </div></div>`;
+  document.getElementById('modal-container').innerHTML = html;
+}
+
+// ---- 生日检测与升级动画 ----
+function checkBirthday() {
+  const today = todayStr();
+  const birthMD = S.player.birthday.slice(5);
+  const todayMD = today.slice(5);
+  const lastChecked = localStorage.getItem('newme_birthday_check_v2')||'';
+  if (birthMD===todayMD && lastChecked!==today) {
+    localStorage.setItem('newme_birthday_check_v2', today);
+    const newLevel = getLevel();
+    checkBadges();
+    S.player.growthXP = 0;
+    S.player.taskXP = S.player.taskXPTotal % 3650;
+    save();
+    setTimeout(()=>showLevelUpAnimation(newLevel), 800);
+  }
+}
+function showLevelUpAnimation(newLevel) {
+  const overlay = document.createElement('div');
+  overlay.className = 'levelup-overlay';
+  overlay.innerHTML = `
+    <div style="text-align:center">
+      <div class="text-lg mb-2">🎂 生日快乐！</div>
+      <div class="levelup-num">Lv.${newLevel}</div>
+      <div class="text-sm mt-2 text-gray-500">新的一岁，新的冒险！</div>
+      <div class="text-xs mt-4 text-gray-400">年度经验已结算，徽章已更新</div>
+      <button class="btn-primary mt-6" onclick="this.closest('.levelup-overlay').remove();updateAllUI();">开启新旅程 🎉</button>
+    </div>`;
+  document.body.appendChild(overlay);
+  for (let i=0;i<40;i++) {
+    setTimeout(()=>{
+      const el=document.createElement('div'); el.className='confetti';
+      el.style.left=Math.random()*100+'%'; el.style.top=-(Math.random()*60)+'px';
+      el.style.animationDuration=(2+Math.random()*3)+'s'; el.style.animationDelay=Math.random()*1.5+'s';
+      el.style.fontSize=(14+Math.random()*24)+'px';
+      el.textContent=['🎉','🎂','✨','🌟','🎈','💫','🎁','🌺'][Math.floor(Math.random()*8)];
+      document.getElementById('fx-layer').appendChild(el);
+      setTimeout(()=>el.remove(),4000);
+    },i*40);
+  }
+  updateAllUI(); save();
+}
+function simulateBirthday() {
+  localStorage.setItem('newme_birthday_check_v2','');
+  S.player.birthday = todayStr();
+  updateAllUI(); save();
+  setTimeout(()=>checkBirthday(),300);
+}
+
+// ---- BOSS通关弹窗 ----
+function showBossClearPopup(boss) {
+  const xpGain = getBossXP(boss.difficulty);
+  const html = `
+    <div class="modal-mask" onclick="this.remove()"><div class="modal-box text-center" onclick="event.stopPropagation()">
+      <div class="text-5xl mb-3">🎊</div>
+      <h2 class="font-bold text-lg mb-1">BOSS 通关！</h2>
+      <p class="text-base font-bold mb-2" style="color:var(--accent-warm)">${boss.icon||''} ${boss.name}</p>
+      <p class="text-sm text-gray-500 mb-1">难度: ${getDifficultyStars(boss.difficulty)} ${getDifficultyLabel(boss.difficulty)}</p>
+      <p class="text-sm text-gray-500 mb-1">经验: +${xpGain} XP (星级×100)</p>
+      <div class="text-xl font-bold mb-1" style="color:var(--primary-blue)">+${xpGain} 任务经验</div>
+      ${boss.module==='life'?`<div class="text-sm text-green-500 mb-2">满意度 +${boss.rewardAmount||5}</div>`:''}
+      ${boss.module==='life'?`
+      <div class="mb-3">
+        <label class="text-xs text-gray-400">通关地点 (可选):</label>
+        <input class="input-sketch text-center mt-1" id="boss-clear-location" placeholder="例如: 黄山" value="${boss.clearLocation||''}">
+        <button class="btn-outline btn-sm mt-2" onclick="saveBossLocation('${boss.id}')">保存地点</button>
+      </div>`:''}
+      <button class="btn-primary mt-2" onclick="this.closest('.modal-mask').remove();updateAllUI();">太棒了！</button>
+    </div></div>`;
+  document.getElementById('modal-container').innerHTML = html;
+  for (let i=0;i<8;i++) {
+    setTimeout(()=>{
+      const el=document.createElement('div'); el.className='float-reward';
+      el.style.left=(30+Math.random()*40)+'%'; el.style.top='50%';
+      el.textContent=boss.module==='life'?'🌄': boss.rewardType==='gold'?'🥇':boss.rewardType==='silver'?'🥈':'🪙';
+      el.style.fontSize=(20+Math.random()*20)+'px';
+      document.getElementById('fx-layer').appendChild(el);
+      setTimeout(()=>el.remove(),2000);
+    },i*100);
+  }
+}
+function saveBossLocation(bossId) {
+  const boss = S.bosses.find(b=>b.id===bossId);
+  if (!boss) return;
+  const loc = document.getElementById('boss-clear-location')?.value?.trim() || '';
+  boss.clearLocation = loc;
+  save();
+  spawnFloatReward('📍 地点已记录','#7EC8E3');
+}
+
+// ---- 浮动奖励 ----
+function spawnFloatReward(text,color) {
+  const el=document.createElement('div'); el.className='float-reward';
+  el.style.left=(35+Math.random()*30)+'%'; el.style.top='55%';
+  el.style.color=color||'#7EC8E3'; el.textContent=text;
+  document.getElementById('fx-layer').appendChild(el);
+  setTimeout(()=>el.remove(),1800);
+}
+
+// ---- 日历视图 ----
+function openCalendarView() {
+  const today = todayStr();
+  const log = S.player.calendarLog || {};
+  // Build calendar for current month
+  const now = new Date();
+  const year = now.getFullYear(), month = now.getMonth();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const firstDay = new Date(year, month, 1).getDay();
+  const weekHeaders = ['日','一','二','三','四','五','六'];
+
+  let daysHTML = '';
+  for (let i=0; i<firstDay; i++) daysHTML += '<div class="w-9 h-9"></div>';
+  for (let d=1; d<=daysInMonth; d++) {
+    const ds = `${year}-${(month+1).toString().padStart(2,'0')}-${d.toString().padStart(2,'0')}`;
+    const entries = log[ds] || [];
+    const isToday = ds === today;
+    const hasEntries = entries.length > 0;
+    daysHTML += `<div class="w-9 h-9 rounded-lg flex items-center justify-center text-xs cursor-pointer relative
+      ${isToday?'font-bold text-white':'text-gray-600'}
+      ${hasEntries?'bg-green-100 hover:bg-green-200': (isToday?'bg-[#7EC8E3]':'hover:bg-gray-100')}"
+      style="${isToday&&!hasEntries?'background:#7EC8E3;':''}"
+      onclick="showDayDetail('${ds}')" title="${entries.length}个任务">
+      ${d}
+      ${hasEntries?`<span class="absolute -top-1 -right-1 w-3 h-3 bg-red-400 rounded-full text-white text-xs flex items-center justify-center" style="font-size:7px;">${entries.length}</span>`:''}
+    </div>`;
+  }
+
+  const html = `
+    <div class="modal-mask" onclick="this.remove()"><div class="modal-box" onclick="event.stopPropagation()">
+      <h2 class="font-bold text-lg mb-3 text-center">📅 ${year}年${month+1}月</h2>
+      <div class="grid grid-cols-7 gap-1 text-center mb-2">
+        ${weekHeaders.map(w=>`<div class="text-xs text-gray-400 font-bold">${w}</div>`).join('')}
+      </div>
+      <div class="grid grid-cols-7 gap-1 text-center">${daysHTML}</div>
+      <div class="mt-4 p-3 bg-gray-50 rounded-xl" id="day-detail-panel">
+        <p class="text-xs text-gray-400 text-center">点击日期查看当天任务详情</p>
+      </div>
+      <button class="btn-primary w-full mt-3" onclick="this.closest('.modal-mask').remove()">关闭</button>
+    </div></div>`;
+  document.getElementById('modal-container').innerHTML = html;
+}
+
+function showDayDetail(dateStr) {
+  const log = S.player.calendarLog || {};
+  const entries = log[dateStr] || [];
+  const panel = document.getElementById('day-detail-panel');
+  if (!panel) return;
+  if (entries.length === 0) {
+    panel.innerHTML = `<p class="text-xs text-gray-400 text-center">${dateStr} — 暂无任务记录</p>`;
+  } else {
+    panel.innerHTML = `
+      <h4 class="text-sm font-bold mb-2">📋 ${dateStr}</h4>
+      <div class="space-y-1.5">${entries.map(e=>`
+        <div class="flex justify-between items-center bg-white rounded-lg px-3 py-2 text-xs">
+          <span>${e.title}</span>
+          <span class="text-gray-400">${e.time||''}</span>
+          <span style="color:var(--primary-blue)">+${e.xp} XP</span>
+        </div>`).join('')}
+      </div>`;
+  }
+}
+
+// ---- 弹窗: 新建任务 ----
+function openTaskDialog(presetModule) {
+  const mod = presetModule || 'learn';
+  const isLearn = mod === 'learn';
+  const html = `
+    <div class="modal-mask" id="task-dialog-mask" onclick="this.remove()"><div class="modal-box" onclick="event.stopPropagation()">
+      <h2 class="font-bold text-lg mb-4">📝 新建任务</h2>
+      <div class="space-y-3">
+        <input class="input-sketch" id="new-task-title" placeholder="任务名称">
+        <div class="flex gap-2">
+          <select class="input-sketch flex-1" id="new-task-module">
+            <option value="learn" ${mod==='learn'?'selected':''}>📚 Learn</option>
+            <option value="work" ${mod==='work'?'selected':''}>💼 Work</option>
+            <option value="life" ${mod==='life'?'selected':''}>🌿 Life</option>
+          </select>
+          <select class="input-sketch flex-1" id="new-task-type">
+            <option value="timer">⏱️ 计时模式</option>
+            <option value="chapter">📖 章节模式</option>
+            <option value="todo">✅ 普通待办</option>
+          </select>
+        </div>
+        <div id="new-task-learn-cat" style="display:${isLearn?'block':'none'}">
+          <span class="text-xs">学习类别:</span>
+          <select class="input-sketch mt-1" id="new-task-learn-category">
+            <option value="health">❤️ 健康</option>
+            <option value="charm">💜 魅力</option>
+            <option value="wisdom" selected>💙 智慧</option>
+          </select>
+        </div>
+        <div class="flex gap-2 items-center">
+          <span class="text-xs">难度:</span>
+          <select class="input-sketch flex-1" id="new-task-difficulty">
+            <option value="1">⭐ 简单</option><option value="2">⭐⭐ 普通</option>
+            <option value="3" selected>⭐⭐⭐ 困难</option><option value="4">⭐⭐⭐⭐ 极难</option>
+            <option value="5">⭐⭐⭐⭐⭐ 地狱</option>
+          </select>
+        </div>
+        <div class="flex gap-2 items-center" id="new-task-xp-row">
+          <span class="text-xs">经验:</span>
+          <input class="input-sketch flex-1" id="new-task-xp" type="number" value="40" min="1">
+          <span class="text-xs text-gray-400" id="new-task-xp-hint">XP ${isLearn?'(日上限10)': mod==='work'?'(1星=1XP)':'(日记上限15)'}</span>
+        </div>
+        <div class="flex gap-2 items-center">
+          <span class="text-xs">循环:</span>
+          <select class="input-sketch flex-1" id="new-task-recurrence">
+            <option value="none">无循环</option><option value="daily" selected>每天</option>
+            <option value="weekly">每周</option><option value="monthly">每月</option>
+          </select>
+        </div>
+        <div id="new-task-timer-extra"><span class="text-xs">目标时长 (秒):</span>
+          <input class="input-sketch mt-1" id="new-task-timer-target" type="number" value="1500" min="60"></div>
+        <div id="new-task-chapter-extra" style="display:none"><span class="text-xs">总章节数:</span>
+          <input class="input-sketch mt-1" id="new-task-chapter-total" type="number" value="10" min="1"></div>
+        <div id="new-task-work-extra" style="display:none"><span class="text-xs">铜钱奖励 (仅Work):</span>
+          <input class="input-sketch mt-1" id="new-task-copper" type="number" value="20" min="0"></div>
+        <button class="btn-primary w-full mt-3" onclick="createTask()">创建任务</button>
+      </div>
+    </div></div>`;
+  document.getElementById('modal-container').innerHTML = html;
+  document.getElementById('new-task-module').onchange = updateTaskForm;
+  document.getElementById('new-task-type').onchange = updateTaskForm;
+  updateTaskForm(); // Set initial visibility
+}
+
+function updateTaskForm() {
+  const type = document.getElementById('new-task-type')?.value;
+  const mod = document.getElementById('new-task-module')?.value;
+  const timerEl=document.getElementById('new-task-timer-extra');
+  const chapterEl=document.getElementById('new-task-chapter-extra');
+  const workEl=document.getElementById('new-task-work-extra');
+  const learnCatEl=document.getElementById('new-task-learn-cat');
+  const xpHint=document.getElementById('new-task-xp-hint');
+  const xpRow=document.getElementById('new-task-xp-row');
+  if(timerEl) timerEl.style.display=type==='timer'?'block':'none';
+  if(chapterEl) chapterEl.style.display=type==='chapter'?'block':'none';
+  if(workEl) workEl.style.display=mod==='work'?'block':'none';
+  if(learnCatEl) learnCatEl.style.display=mod==='learn'?'block':'none';
+  if(mod==='work' || mod==='learn') {
+    if(xpRow) xpRow.style.display='none';
+  } else {
+    if(xpRow) xpRow.style.display='flex';
+    if(xpHint) xpHint.textContent = 'XP (日记上限15)';
+  }
+}
+
+function createTask() {
+  const title = document.getElementById('new-task-title').value.trim();
+  if(!title) { alert('请输入任务名称'); return; }
+  const module = document.getElementById('new-task-module').value;
+  const type = document.getElementById('new-task-type').value;
+  const difficulty = parseInt(document.getElementById('new-task-difficulty').value);
+  const baseXP = parseInt(document.getElementById('new-task-xp').value);
+  const recurrence = document.getElementById('new-task-recurrence').value;
+  const task = { id:uid(), module, type, title, difficulty, baseXP, recurrence, completed:false };
+  if (module==='learn') {
+    task.learnCategory = document.getElementById('new-task-learn-category').value;
+  }
+  if (type==='timer') {
+    task.timerTarget = parseInt(document.getElementById('new-task-timer-target').value)||1500;
+    task.timerAccumulated=0; task.timerRunning=false; task.timerStartTs=null;
+  }
+  if (type==='chapter') {
+    task.chapterTotal = parseInt(document.getElementById('new-task-chapter-total').value)||10;
+    task.chapterDone = [];
+  }
+  if (module==='work' || module==='learn') {
+    task.baseXP = 1; // XP = difficulty (1 star = 1 XP)
+  }
+  if (module==='work') {
+    task.rewardCopper = parseInt(document.getElementById('new-task-copper')?.value)||0;
+  }
+  S.tasks.push(task);
+  document.getElementById('task-dialog-mask')?.remove();
+  updateAllUI(); save();
+  spawnFloatReward('✅ 任务已创建','#7EC8E3');
+}
+
+// ---- 弹窗: 新建BOSS ----
+function openBossDialog(module) {
+  const isLife = module==='life';
+  const html = `
+    <div class="modal-mask" id="boss-dialog-mask" onclick="this.remove()"><div class="modal-box" onclick="event.stopPropagation()">
+      <h2 class="font-bold text-lg mb-4">👾 新建BOSS</h2>
+      <div class="space-y-3">
+        <input class="input-sketch" id="new-boss-name" placeholder="BOSS名称">
+        <input class="input-sketch" id="new-boss-hp" type="number" value="100" min="10" placeholder="HP值">
+        <div class="flex gap-2 items-center">
+          <span class="text-xs">难度:</span>
+          <select class="input-sketch flex-1" id="new-boss-difficulty">
+            <option value="1">⭐ 简单(+100XP)</option><option value="2">⭐⭐ 普通(+200XP)</option>
+            <option value="3">⭐⭐⭐ 困难(+300XP)</option><option value="4" selected>⭐⭐⭐⭐ 极难(+400XP)</option>
+            <option value="5">⭐⭐⭐⭐⭐ 地狱(+500XP)</option>
+          </select>
+        </div>
+        <p class="text-xs text-gray-400">经验=星级×100 (上限500), 不可自定义</p>
+        ${isLife?`
+          <div class="flex gap-2 items-center"><span class="text-xs">满意度奖励:</span>
+            <input class="input-sketch flex-1" id="new-boss-sat" type="number" value="40" min="1" max="200"><span class="text-xs text-gray-400">/900</span></div>
+        `:`
+          <div class="flex gap-2 items-center"><span class="text-xs">奖励类型:</span>
+            <select class="input-sketch flex-1" id="new-boss-reward-type"><option value="copper">🪙 铜钱</option><option value="silver">🥈 银元宝</option><option value="gold">🥇 金元宝</option></select></div>
+          <div class="flex gap-2 items-center"><span class="text-xs">奖励数量:</span>
+            <input class="input-sketch flex-1" id="new-boss-reward-amount" type="number" value="500" min="1"></div>
+        `}
+        <div class="flex gap-2 items-center"><span class="text-xs">循环周期:</span>
+          <select class="input-sketch flex-1" id="new-boss-cycle"><option value="weekly">每周</option><option value="monthly">每月</option><option value="quarterly">每季</option><option value="none">一次性</option></select></div>
+        <button class="btn-primary w-full mt-3" onclick="createBoss('${module}')">创建BOSS</button>
+      </div>
+    </div></div>`;
+  document.getElementById('modal-container').innerHTML = html;
+}
+
+function createBoss(module) {
+  const name = document.getElementById('new-boss-name').value.trim();
+  if(!name) { alert('请输入BOSS名称'); return; }
+  const hp = parseInt(document.getElementById('new-boss-hp').value)||100;
+  const difficulty = parseInt(document.getElementById('new-boss-difficulty').value);
+  const cycle = document.getElementById('new-boss-cycle').value;
+  const icon = randomBossIcon(module);
+  const boss = { id:uid(), module, name, difficulty, hp, maxHP:hp, rewardXP:getBossXP(difficulty), icon, cycle, clearDate:null, clearLocation:'' };
+  if (module==='life') {
+    boss.rewardType='satisfaction';
+    boss.rewardAmount=parseInt(document.getElementById('new-boss-sat')?.value)||5;
+  } else {
+    boss.rewardType=document.getElementById('new-boss-reward-type').value;
+    boss.rewardAmount=parseInt(document.getElementById('new-boss-reward-amount').value)||500;
+  }
+  S.bosses.push(boss);
+  document.getElementById('boss-dialog-mask')?.remove();
+  updateAllUI(); save();
+  spawnFloatReward(`👾 ${icon} BOSS已出现!`,'#E57373');
+}
+
+function deleteBoss(bossId) {
+  if (!confirm('确定要删除这个BOSS吗？')) return;
+  S.bosses = S.bosses.filter(b => b.id !== bossId);
+  updateAllUI(); save();
+  spawnFloatReward('🗑️ BOSS已删除', '#E57373');
+}
+
+function openEditBossDialog(bossId) {
+  const boss = S.bosses.find(b => b.id===bossId);
+  if (!boss) return;
+  const isLife = boss.module === 'life';
+  const html = `
+    <div class="modal-mask" id="edit-boss-dialog-mask" onclick="this.remove()"><div class="modal-box" onclick="event.stopPropagation()">
+      <h2 class="font-bold text-lg mb-4">✏️ 编辑BOSS</h2>
+      <div class="space-y-3">
+        <input class="input-sketch" id="edit-boss-name" value="${boss.name.replace(/"/g,'&quot;')}" placeholder="BOSS名称">
+        <input class="input-sketch" id="edit-boss-hp" type="number" value="${boss.maxHP}" min="10" placeholder="HP值">
+        <div class="flex gap-2 items-center">
+          <span class="text-xs">难度:</span>
+          <select class="input-sketch flex-1" id="edit-boss-difficulty">
+            ${[1,2,3,4,5].map(n=>`<option value="${n}" ${boss.difficulty===n?'selected':''}>${'⭐'.repeat(n)} ${['','简单','普通','困难','极难','地狱'][n]} (+${Math.min(500,n*100)}XP)</option>`).join('')}
+          </select>
+        </div>
+        <p class="text-xs text-gray-400">经验=星级×100 (上限500), 不可自定义</p>
+        ${isLife?`
+          <div class="flex gap-2 items-center"><span class="text-xs">满意度奖励:</span>
+            <input class="input-sketch flex-1" id="edit-boss-sat" type="number" value="${boss.rewardAmount||40}" min="1" max="200"><span class="text-xs text-gray-400">/900</span></div>
+        `:`
+          <div class="flex gap-2 items-center"><span class="text-xs">奖励类型:</span>
+            <select class="input-sketch flex-1" id="edit-boss-reward-type"><option value="copper" ${boss.rewardType==='copper'?'selected':''}>🪙 铜钱</option><option value="silver" ${boss.rewardType==='silver'?'selected':''}>🥈 银元宝</option><option value="gold" ${boss.rewardType==='gold'?'selected':''}>🥇 金元宝</option></select></div>
+          <div class="flex gap-2 items-center"><span class="text-xs">奖励数量:</span>
+            <input class="input-sketch flex-1" id="edit-boss-reward-amount" type="number" value="${boss.rewardAmount||500}" min="1"></div>
+        `}
+        <div class="flex gap-2 items-center"><span class="text-xs">循环周期:</span>
+          <select class="input-sketch flex-1" id="edit-boss-cycle"><option value="weekly" ${boss.cycle==='weekly'?'selected':''}>每周</option><option value="monthly" ${boss.cycle==='monthly'?'selected':''}>每月</option><option value="quarterly" ${boss.cycle==='quarterly'?'selected':''}>每季</option><option value="none" ${boss.cycle==='none'?'selected':''}>一次性</option></select></div>
+        <button class="btn-primary w-full mt-3" onclick="saveBossEdit('${bossId}')">保存修改</button>
+      </div>
+    </div></div>`;
+  document.getElementById('modal-container').innerHTML = html;
+}
+
+function saveBossEdit(bossId) {
+  const boss = S.bosses.find(b => b.id===bossId);
+  if (!boss) return;
+  const name = document.getElementById('edit-boss-name').value.trim();
+  if (!name) { alert('请输入BOSS名称'); return; }
+  boss.name = name;
+  const newMaxHP = parseInt(document.getElementById('edit-boss-hp').value)||100;
+  boss.difficulty = parseInt(document.getElementById('edit-boss-difficulty').value);
+  boss.rewardXP = getBossXP(boss.difficulty);
+  boss.cycle = document.getElementById('edit-boss-cycle').value;
+  if (boss.module === 'life') {
+    boss.rewardAmount = parseInt(document.getElementById('edit-boss-sat')?.value)||40;
+  } else {
+    boss.rewardType = document.getElementById('edit-boss-reward-type').value;
+    boss.rewardAmount = parseInt(document.getElementById('edit-boss-reward-amount').value)||500;
+  }
+  // Preserve HP proportionally if max HP changed
+  if (newMaxHP !== boss.maxHP) {
+    const ratio = boss.hp / boss.maxHP;
+    boss.maxHP = newMaxHP;
+    boss.hp = Math.max(1, Math.round(newMaxHP * ratio));
+  }
+  document.getElementById('edit-boss-dialog-mask')?.remove();
+  updateAllUI(); save();
+  spawnFloatReward('✅ BOSS已更新', '#7EC8E3');
+}
+
+// ---- 弹窗: 写日记(支持照片) ----
+function openDiaryDialog() {
+  const moods = ['😊','😄','🥰','😌','😎','🤩','😢','😤','🥱','☕','🌧️','🌈'];
+  const html = `
+    <div class="modal-mask" id="diary-dialog-mask" onclick="this.remove()"><div class="modal-box" onclick="event.stopPropagation()">
+      <h2 class="font-bold text-lg mb-3">🖊️ 记录日常</h2>
+      <textarea class="input-sketch mb-2" id="new-diary-content" rows="3" placeholder="今天发生了什么有趣的事？"></textarea>
+      <div class="mb-2">
+        <span class="text-xs text-gray-400 mb-1 block">添加照片 (可选, 图文+10XP):</span>
+        <input type="file" id="new-diary-photo-input" accept="image/*" onchange="previewDiaryPhoto(this)">
+        <img id="diary-photo-preview" class="diary-photo" style="display:none">
+        <input type="hidden" id="new-diary-photo-data" value="">
+      </div>
+      <div class="mb-3">
+        <span class="text-xs text-gray-400 mb-1 block">心情:</span>
+        <div class="flex gap-2 flex-wrap" id="mood-selector">
+          ${moods.map((m,i)=>`<span class="text-xl cursor-pointer btn-tap ${i===0?'border-2 rounded-xl p-1':''}" style="border-color:var(--primary-blue)" onclick="selectMood('${m}',this)">${m}</span>`).join('')}
+        </div>
+      </div>
+      <input class="hidden" id="new-diary-mood" value="😊">
+      <p class="text-xs text-gray-400 mb-2">日记经验: 纯文字+5XP | 图文+10XP (日上限15)</p>
+      <button class="btn-primary w-full" onclick="createDiary()">保存日记</button>
+    </div></div>`;
+  document.getElementById('modal-container').innerHTML = html;
+}
+
+function previewDiaryPhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    document.getElementById('diary-photo-preview').src = e.target.result;
+    document.getElementById('diary-photo-preview').style.display = 'block';
+    document.getElementById('new-diary-photo-data').value = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function selectMood(mood,el) {
+  document.getElementById('new-diary-mood').value = mood;
+  document.querySelectorAll('#mood-selector span').forEach(s=>{s.style.border='none';s.style.padding='0';});
+  el.style.border='2px solid var(--primary-blue)'; el.style.borderRadius='12px'; el.style.padding='2px';
+}
+
+function createDiary() {
+  const content = document.getElementById('new-diary-content').value.trim();
+  if(!content) { alert('写点什么吧~'); return; }
+  const mood = document.getElementById('new-diary-mood').value;
+  const photo = document.getElementById('new-diary-photo-data').value || '';
+  addDiary(content, mood, photo);
+  document.getElementById('diary-dialog-mask')?.remove();
+}
+
+function openEditDiaryDialog(diaryId) {
+  const diary = S.diaries.find(d => d.id === diaryId);
+  if (!diary) return;
+  const moods = ['😊','😄','🥰','😌','😎','🤩','😢','😤','🥱','☕','🌧️','🌈'];
+  const html = `
+    <div class="modal-mask" id="diary-edit-dialog-mask" onclick="this.remove()"><div class="modal-box" onclick="event.stopPropagation()">
+      <h2 class="font-bold text-lg mb-3">✏️ 编辑日记</h2>
+      <textarea class="input-sketch mb-2" id="edit-diary-content" rows="3">${diary.content}</textarea>
+      <div class="mb-2">
+        <span class="text-xs text-gray-400 mb-1 block">修改照片 (可选):</span>
+        <input type="file" id="edit-diary-photo-input" accept="image/*" onchange="previewEditDiaryPhoto(this)">
+        <img id="edit-diary-photo-preview" class="diary-photo" style="${diary.photo?'display:block':'display:none'}" src="${diary.photo||''}">
+        <input type="hidden" id="edit-diary-photo-data" value="${diary.photo||''}">
+      </div>
+      <div class="mb-3">
+        <span class="text-xs text-gray-400 mb-1 block">心情:</span>
+        <div class="flex gap-2 flex-wrap" id="edit-mood-selector">
+          ${moods.map(m=>`<span class="text-xl cursor-pointer btn-tap ${m===diary.mood?'border-2 rounded-xl p-1':''}" style="border-color:var(--primary-blue)" onclick="selectEditMood('${m}',this)">${m}</span>`).join('')}
+        </div>
+      </div>
+      <input class="hidden" id="edit-diary-mood" value="${diary.mood}">
+      <button class="btn-primary w-full" onclick="saveDiaryEdit('${diaryId}')">保存修改</button>
+      <button class="btn-outline w-full mt-2" style="color:var(--accent-red);border-color:var(--accent-red)" onclick="if(confirm('确定删除这条日记？')){deleteDiary('${diaryId}');this.closest('.modal-mask').remove();}">🗑️ 删除日记</button>
+    </div></div>`;
+  document.getElementById('modal-container').innerHTML = html;
+}
+
+function previewEditDiaryPhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    document.getElementById('edit-diary-photo-preview').src = e.target.result;
+    document.getElementById('edit-diary-photo-preview').style.display = 'block';
+    document.getElementById('edit-diary-photo-data').value = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function selectEditMood(mood, el) {
+  document.getElementById('edit-diary-mood').value = mood;
+  document.querySelectorAll('#edit-mood-selector span').forEach(s => s.classList.remove('border-2','rounded-xl','p-1'));
+  el.classList.add('border-2','rounded-xl','p-1');
+}
+
+function saveDiaryEdit(diaryId) {
+  const diary = S.diaries.find(d => d.id === diaryId);
+  if (!diary) return;
+  const content = document.getElementById('edit-diary-content').value.trim();
+  if (!content) { alert('写点什么吧~'); return; }
+  diary.content = content;
+  diary.mood = document.getElementById('edit-diary-mood').value;
+  diary.photo = document.getElementById('edit-diary-photo-data').value || '';
+  document.getElementById('diary-edit-dialog-mask')?.remove();
+  updateAllUI(); save();
+}
+
+function deleteDiary(diaryId) {
+  if (!confirm('确定删除这条日记吗？')) return;
+  S.diaries = S.diaries.filter(d => d.id !== diaryId);
+  updateAllUI(); save();
+}
+
+// ---- 弹窗: 生日设置 ----
+function openBirthdayDialog() {
+  const html = `
+    <div class="modal-mask" id="birthday-dialog-mask" onclick="this.remove()"><div class="modal-box text-center" onclick="event.stopPropagation()">
+      <h2 class="font-bold text-lg mb-3">🎂 设置生日</h2>
+      <p class="text-xs text-gray-400 mb-3">生日决定了你的等级（年龄=等级）</p>
+      <input class="input-sketch mb-3 text-center" id="new-birthday" type="date" value="${S.player.birthday}">
+      <button class="btn-primary w-full" onclick="updateBirthday()">保存</button>
+      <button class="btn-outline w-full mt-2" style="color:var(--accent-warm);border-color:var(--accent-warm)" onclick="simulateBirthday();this.closest('.modal-mask').remove();">🎉 模拟生日升级</button>
+    </div></div>`;
+  document.getElementById('modal-container').innerHTML = html;
+}
+function updateBirthday() {
+  const val = document.getElementById('new-birthday').value;
+  if(!val) return;
+  S.player.birthday = val;
+  document.getElementById('birthday-dialog-mask')?.remove();
+  updateAllUI(); save();
+}
+
+// ---- 弹窗: 自定义徽章 ----
+function openCustomBadgeDialog() {
+  const html = `
+    <div class="modal-mask" id="custom-badge-dialog" onclick="this.remove()"><div class="modal-box text-center" onclick="event.stopPropagation()">
+      <h2 class="font-bold text-lg mb-3">🏅 自定义徽章</h2><p class="text-xs text-gray-400 mb-3">最多3个自定义徽章</p>
+      <input class="input-sketch mb-2" id="custom-badge-name" placeholder="徽章名称">
+      <div class="mb-3"><span class="text-xs text-gray-400 mb-1 block">选择图标:</span>
+        <div class="flex gap-2 flex-wrap justify-center" id="emoji-picker">
+          ${['⭐','🌟','💎','🔥','🌈','🎯','🏆','💪','🧠','❤️','🎨','🎵','🚀','🌺','🍀','👑'].map(e=>`<span class="text-2xl cursor-pointer btn-tap" onclick="document.getElementById('custom-badge-icon').value='${e}';document.querySelectorAll('#emoji-picker span').forEach(s=>s.style.border='none');this.style.border='2px solid var(--primary-blue)';this.style.borderRadius='8px';this.style.padding='2px'">${e}</span>`).join('')}
+        </div>
+        <input class="hidden" id="custom-badge-icon" value="⭐">
+      </div>
+      <button class="btn-primary w-full" onclick="createCustomBadge()">创建徽章</button>
+    </div></div>`;
+  document.getElementById('modal-container').innerHTML = html;
+}
+function createCustomBadge() {
+  const name = document.getElementById('custom-badge-name').value.trim();
+  if(!name) { alert('请输入徽章名称'); return; }
+  const icon = document.getElementById('custom-badge-icon').value;
+  addCustomBadge(name, icon);
+  document.getElementById('custom-badge-dialog')?.remove();
+}
+
+// ---- 弹窗: 补录时间 ----
+function openRetroDialog(taskId) {
+  const html = `
+    <div class="modal-mask" id="retro-dialog-mask" onclick="this.remove()"><div class="modal-box text-center" onclick="event.stopPropagation()">
+      <h2 class="font-bold text-lg mb-3">⏱️ 补录时间</h2><p class="text-xs text-gray-400 mb-3">手动记录已花费的学习时间</p>
+      <div class="flex gap-2 justify-center items-center mb-3">
+        <input class="input-sketch w-14 text-center" id="retro-hours" type="number" value="0" min="0" placeholder="时"><span>:</span>
+        <input class="input-sketch w-14 text-center" id="retro-minutes" type="number" value="25" min="0" max="59" placeholder="分"><span>:</span>
+        <input class="input-sketch w-14 text-center" id="retro-seconds" type="number" value="0" min="0" max="59" placeholder="秒">
+      </div>
+      <button class="btn-primary w-full" onclick="submitRetro('${taskId}')">确认补录</button>
+    </div></div>`;
+  document.getElementById('modal-container').innerHTML = html;
+}
+function submitRetro(taskId) {
+  const h=parseInt(document.getElementById('retro-hours').value)||0;
+  const m=parseInt(document.getElementById('retro-minutes').value)||0;
+  const s=parseInt(document.getElementById('retro-seconds').value)||0;
+  const total = h*3600 + m*60 + s;
+  if(total<=0) { alert('请输入有效时间'); return; }
+  retroRecord(taskId, total);
+  document.getElementById('retro-dialog-mask')?.remove();
+}
+
+// ---- 重置 ----
+function resetAllData() {
+  if(confirm('确定要重置所有数据吗？此操作不可恢复！')) {
+    localStorage.removeItem('newme_state_v2');
+    localStorage.removeItem('newme_birthday_check_v2');
+    S = createDefaultState();
+    updateAllUI(); save();
+  }
+}
+
+// ============================================================
+// 页面切换
+// ============================================================
+function switchPage(pageId) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const target = document.getElementById('page-'+pageId);
+  if(target) target.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>{n.classList.remove('active');n.classList.add('text-gray-400');});
+  const nav = document.getElementById('nav-'+pageId);
+  if(nav) { nav.classList.add('active'); nav.classList.remove('text-gray-400'); }
+  document.getElementById('main-content').scrollTop = 0;
+  updateAllUI();
+}
+
+function switchLearnTab(tab) {
+  document.getElementById('tab-timer').classList.toggle('active', tab==='timer');
+  document.getElementById('tab-chapter').classList.toggle('active', tab==='chapter');
+  document.getElementById('learn-timer-tasks').style.display = tab==='timer'?'block':'none';
+  document.getElementById('learn-chapter-tasks').style.display = tab==='chapter'?'block':'none';
+}
+
+// ============================================================
+// 全量UI刷新
+// ============================================================
+function updateAllUI() {
+  const level = getLevel();
+  const growthXP = S.player.growthXP || 0;
+  const growthReq = 3650;
+  const growthPct = Math.min(100, Math.round(growthXP / growthReq * 100));
+  const daysLeft = daysUntilBirthday();
+  const taskLv = getTaskLevel();
+  const taskXP = S.player.taskXP || 0;
+  const taskXPTotal = S.player.taskXPTotal || 0;
+  const taskXPPct = Math.min(100, Math.round(taskXP / 3650 * 100));
+
+  // ---- 主页 ----
+  setText('home-level', 'Lv.'+level);
+  setText('home-xp-text', `成长经验 ${fmt(growthXP)} / ${fmt(growthReq)}`);
+  setWidth('home-xp-bar', growthPct+'%');
+  setText('countdown-next-lv', level+1);
+  setText('countdown-days', daysLeft);
+  setText('home-task-lv', taskLv);
+  setText('home-task-xp-text', `任务经验 ${fmt(taskXP)} / 3650`);
+  setWidth('home-task-xp-bar', taskXPPct+'%');
+  setText('home-name', S.player.name);
+  setText('stat-tasks', S.player.tasksDoneToday||0);
+  setText('stat-xp', '+'+(S.player.xpToday||0));
+  setText('stat-streak', S.player.streak||0);
+
+  // 头像
+  const avatars = ['home-avatar','me-avatar'];
+  avatars.forEach(id=>{
+    const img = document.getElementById(id);
+    if(img) {
+      if(S.player.avatar) { img.src = S.player.avatar; img.style.display=''; if(img.nextElementSibling) img.nextElementSibling.style.display='none'; }
+      else { img.style.display='none'; if(img.nextElementSibling) img.nextElementSibling.style.display='flex'; }
+    }
+  });
+
+  // 主页待办
+  const homeTodos = document.getElementById('home-todos');
+  if(homeTodos) {
+    const all = S.tasks.slice(0,6);
+    homeTodos.innerHTML = all.length===0 ? '<p class="text-xs text-gray-400 text-center py-4">暂无待办任务，去添加一个吧~</p>' :
+      all.map(t=>{
+        const xpDisp = t.difficulty; // All tasks: XP = difficulty (1 star = 1 XP)
+        return `
+      <div class="flip-container ${t.completed?'flipped':''} sketch-shadow" style="min-height:64px;">
+        <div class="flip-inner" style="min-height:64px;">
+          <div class="flip-front sketch-card flex items-center gap-3 py-3">
+            <input type="checkbox" class="w-5 h-5" style="accent-color:var(--primary-blue)" ${t.completed?'checked':''} onchange="${t.recurrence&&t.recurrence!=='none'?`flipTask('${t.id}')`:`completeTask('${t.id}')`}">
+            <div class="flex-1">
+              <div class="text-sm font-medium ${t.completed?'task-done':''}">${t.title}</div>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="text-xs text-orange-400">${getDifficultyStars(t.difficulty)}</span>
+                <span class="text-xs bg-blue-50 text-blue-400 px-2 py-0.5 rounded-full">+${xpDisp} XP</span>
+                ${t.learnCategory?`<span class="text-xs px-2 py-0.5 rounded-full" style="background:${getLearnCategoryColor(t.learnCategory)}20;color:${getLearnCategoryColor(t.learnCategory)}">${getLearnCategoryName(t.learnCategory)}</span>`:''}
+              </div>
+            </div>
+          </div>
+          <div class="flip-back" onclick="${t.recurrence&&t.recurrence!=='none'?`flipTask('${t.id}')`:`flipTask('${t.id}')`}">
+            <div class="done-stamp">✅ 已完成</div>
+            <div class="text-xs text-gray-400 mt-2">${t.recurrence&&t.recurrence!=='none'?'点击翻转重新开始':'一次性任务'}</div>
+          </div>
+        </div>
+      </div>`;
+      }).join('');
+  }
+
+  // ---- Life ----
+  const sat = S.player.satisfaction || 0;
+  setText('life-satisfaction', sat+'/'+900);
+  setWidth('life-satisfaction-bar', Math.min(100, Math.round(sat/900*100))+'%');
+
+  const lifeBosses = document.getElementById('life-bosses');
+  if(lifeBosses) {
+    const lbs = S.bosses.filter(b=>b.module==='life');
+    lifeBosses.innerHTML = lbs.length===0 ? '<p class="text-xs text-gray-400 text-center py-4">还没有旅行BOSS，添加一个吧~</p>' :
+      lbs.map(b=>`
+      <div class="boss-card sketch-shadow sketch-shadow-red mb-3" id="boss-${b.id}" style="background:#FFF8F6;border:2px solid #FFCCBC;">
+        <div class="flex gap-3 items-start">
+          <div class="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0">${b.icon||'🏔️'}</div>
+          <div class="flex-1">
+            <div class="flex justify-between items-start">
+              <h3 class="font-bold text-sm">BOSS: ${b.name}</h3>
+              <div class="flex gap-1 flex-shrink-0 ml-1">
+                <button class="btn-outline btn-sm" style="font-size:10px;padding:2px 6px;" onclick="event.stopPropagation();openEditBossDialog('${b.id}')">✏️</button>
+                <button class="btn-outline btn-sm" style="font-size:10px;padding:2px 6px;color:#E57373;border-color:#E57373;" onclick="event.stopPropagation();deleteBoss('${b.id}')">🗑️</button>
+              </div>
+            </div>
+            <p class="text-xs text-gray-400 mb-1">${getDifficultyStars(b.difficulty)} ${getDifficultyLabel(b.difficulty)} | 经验: +${getBossXP(b.difficulty)} XP (星级×100)</p>
+            <div class="flex items-center gap-2 mb-2">
+              <div class="flex-1 progress-bar" style="border-color:#E57373;height:8px;"><div class="progress-fill red" style="width:${Math.round(b.hp/b.maxHP*100)}%;height:100%;"></div></div>
+              <span class="text-xs font-bold text-red-400">${b.hp} HP</span>
+            </div>
+            ${b.hp>0?`
+              <div class="flex gap-2">
+                <button class="btn-primary btn-sm btn-warm" onclick="document.getElementById('boss-upload-${b.id}').click()">📷 拍照通关</button>
+                <input type="file" class="hidden" id="boss-upload-${b.id}" accept="image/*" onchange="attackBoss('${b.id}',${Math.floor(b.maxHP*0.35)},true);spawnFloatReward('📷 照片上传!','#81C784')">
+                <button class="btn-outline btn-sm" onclick="attackBoss('${b.id}',${5+Math.floor(Math.random()*10)},false)">⚔️ 攻击</button>
+              </div>
+              ${b.hp<=Math.floor(b.maxHP*0.15)?'<p class="text-xs text-red-400 mt-1">⚠️ 需要上传照片才能通关哦~</p>':''}
+            `:`<div><span class="text-xs text-green-500 font-bold">✅ 已通关!</span> <button class="btn-outline btn-sm ml-2" style="color:var(--accent-warm);border-color:var(--accent-warm);font-size:10px;" onclick="reviveBoss('${b.id}')">🔄 复活</button></div>`}
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  // 通关记录
+  const bossRecords = document.getElementById('life-boss-records');
+  if(bossRecords) {
+    const cleared = S.bosses.filter(b=>b.module==='life' && b.hp<=0 && b.clearDate);
+    bossRecords.innerHTML = cleared.length===0 ? '<p class="text-xs text-gray-400 text-center py-2">还没有通关记录，去挑战旅行BOSS吧~</p>' :
+      cleared.map(b=>`
+      <div class="sketch-card sketch-shadow flex items-center gap-3 py-2 px-3">
+        <span class="text-xl">${b.icon||'🏔️'}</span>
+        <div class="flex-1">
+          <div class="text-sm font-medium">${b.name}</div>
+          <div class="text-xs text-gray-400">${b.clearDate} ${b.clearLocation?'@ '+b.clearLocation:''} | ${getDifficultyStars(b.difficulty)}</div>
+        </div>
+        <span class="text-xs" style="color:var(--primary-blue)">+${getBossXP(b.difficulty)} XP</span>
+      </div>`).join('');
+  }
+
+  // 日记
+  const lifeDiaries = document.getElementById('life-diaries');
+  if(lifeDiaries) {
+    const diaries = S.diaries||[];
+    lifeDiaries.innerHTML = diaries.length===0 ? '<p class="text-xs text-gray-400 text-center py-4">还没有日记，记录你的日常吧~</p>' :
+      diaries.slice(0,15).map(d=>`
+      <div class="flex gap-3">
+        <div class="flex flex-col items-center"><div class="w-2 h-2 rounded-full" style="background:var(--primary-blue)"></div><div class="w-0.5 flex-1 opacity-20" style="background:var(--primary-blue)"></div></div>
+        <div class="sketch-card sketch-shadow flex-1 mb-3">
+          <div class="flex justify-between items-center mb-1"><span class="text-xs text-gray-400">${d.date}</span><div class="flex items-center gap-2"><span>${d.mood}</span><button class="text-xs text-gray-400 hover:text-blue-400 btn-tap" onclick="event.stopPropagation();openEditDiaryDialog('${d.id}')">✏️</button><button class="text-xs text-gray-400 hover:text-red-400 btn-tap" onclick="event.stopPropagation();deleteDiary('${d.id}')">🗑️</button></div></div>
+          <p class="text-sm">${d.content}</p>
+          ${d.photo?`<img src="${d.photo}" class="diary-photo" alt="日记照片">`:''}
+        </div>
+      </div>`).join('');
+  }
+
+  // ---- Work ----
+  setText('wealth-copper', fmt(S.player.copper));
+  setText('wealth-silver', fmt(S.player.silver));
+  setText('wealth-gold', fmt(S.player.gold));
+
+  ['work-main','work-side'].forEach(wm=>{
+    const container = document.getElementById(wm==='work-main'?'work-main-bosses':'work-side-bosses');
+    if(!container) return;
+    const bosses = S.bosses.filter(b=>b.module===wm);
+    container.innerHTML = bosses.length===0 ? `<p class="text-xs text-gray-400 text-center py-4">还没有${wm==='work-main'?'主业':'副业'}BOSS~</p>` :
+      bosses.map(b=>renderWorkBoss(b)).join('');
+  });
+
+  const workTodos = document.getElementById('work-todos');
+  if(workTodos) {
+    const wts = S.tasks.filter(t=>t.module==='work');
+    workTodos.innerHTML = wts.length===0 ? '<p class="text-xs text-gray-400 text-center py-4">还没有工作待办~</p>' :
+      wts.map(t=>{
+        const xpDisp = t.difficulty; // 1 star = 1 XP for work
+        return `
+      <div class="flip-container ${t.completed?'flipped':''} sketch-shadow" style="min-height:62px;">
+        <div class="flip-inner" style="min-height:62px;">
+          <div class="flip-front sketch-card flex items-center gap-3 py-3">
+            <input type="checkbox" class="w-5 h-5" style="accent-color:var(--primary-blue)" ${t.completed?'checked':''} onchange="${t.recurrence&&t.recurrence!=='none'?`flipTask('${t.id}')`:`completeTask('${t.id}')`}">
+            <div class="flex-1">
+              <div class="text-sm font-medium">${t.title}</div>
+              <div class="flex items-center gap-2 mt-0.5">
+                <span class="text-xs text-orange-400">${getDifficultyStars(t.difficulty)}</span>
+                <span class="text-xs bg-blue-50 text-blue-400 px-2 py-0.5 rounded-full">+${xpDisp} XP</span>
+                ${t.rewardCopper?`<span class="text-xs text-orange-400">🪙 ${t.rewardCopper}</span>`:''}
+              </div>
+            </div>
+            <div class="flex gap-1 flex-shrink-0">
+              <button class="btn-outline btn-sm" style="font-size:10px;padding:3px 8px;" onclick="event.stopPropagation();openEditTaskDialog('${t.id}')">✏️</button>
+              <button class="btn-outline btn-sm" style="font-size:10px;padding:3px 8px;color:#E57373;border-color:#E57373;" onclick="event.stopPropagation();deleteTask('${t.id}')">🗑️</button>
+            </div>
+          </div>
+          <div class="flip-back" onclick="${t.recurrence&&t.recurrence!=='none'?`flipTask('${t.id}')`:`flipTask('${t.id}')`}">
+            <div class="done-stamp">✅ 已完成</div>
+            <div class="text-xs text-gray-400 mt-2">${t.recurrence&&t.recurrence!=='none'?'点击翻转重新开始':'一次性任务'}</div>
+          </div>
+        </div>
+      </div>`;
+      }).join('');
+  }
+
+  // ---- Learn ----
+  updateAttributeRings();
+
+  const timerTasks = document.getElementById('learn-timer-tasks');
+  if(timerTasks) {
+    const tts = S.tasks.filter(t=>t.module==='learn' && t.type==='timer');
+    timerTasks.innerHTML = tts.length===0 ? '<p class="text-xs text-gray-400 text-center py-4">暂无计时任务</p>' :
+      tts.map(t=>{
+        if (t.completed) {
+          const catColor = getLearnCategoryColor(t.learnCategory||'wisdom');
+          return `
+          <div class="flip-container flipped sketch-shadow" style="min-height:120px;">
+            <div class="flip-inner" style="min-height:120px;">
+              <div class="flip-front sketch-card sketch-shadow border-2" style="border-color:${catColor}33;opacity:0;">
+                <div class="text-sm font-bold">${t.title}</div>
+              </div>
+              <div class="flip-back" onclick="${t.recurrence&&t.recurrence!=='none'?`flipTask('${t.id}')`:`flipTask('${t.id}')`}">
+                <div class="done-stamp">✅ 已完成</div>
+                <div class="text-xs font-medium mt-2">${t.title}</div>
+                <div class="text-xs text-gray-400 mt-1">${t.recurrence&&t.recurrence!=='none'?'点击翻转重新开始':'一次性任务'}</div>
+                <div class="flex gap-1 mt-2">
+                  <button class="btn-outline btn-sm" style="font-size:10px;padding:3px 8px;" onclick="event.stopPropagation();openEditTaskDialog('${t.id}')">✏️</button>
+                  <button class="btn-outline btn-sm" style="font-size:10px;padding:3px 8px;color:#E57373;border-color:#E57373;" onclick="event.stopPropagation();deleteTask('${t.id}')">🗑️</button>
+                </div>
+              </div>
+            </div>
+          </div>`;
+        }
+        const currSec = getTimerDisplaySeconds(t);
+        const pct = Math.min(100, Math.round(currSec/t.timerTarget*100));
+        const catColor = getLearnCategoryColor(t.learnCategory||'wisdom');
+        return `
+        <div class="sketch-card sketch-shadow border-2" style="border-color:${catColor}33">
+          <div class="flex justify-between items-start mb-2">
+            <div><h3 class="font-bold text-sm">${t.title}</h3>
+              <p class="text-xs text-gray-400">${getDifficultyStars(t.difficulty)} | 目标: ${formatTimer(t.timerTarget)} | +${t.difficulty} XP</p>
+            </div>
+            <div class="flex gap-1">
+              <div class="px-2 py-1 rounded text-xs font-bold" style="background:${catColor}20;color:${catColor}">⏱️ ${getLearnCategoryName(t.learnCategory||'wisdom')}</div>
+              <button class="btn-outline btn-sm" style="font-size:10px;padding:3px 6px;" onclick="openEditTaskDialog('${t.id}')">✏️</button>
+              <button class="btn-outline btn-sm" style="font-size:10px;padding:3px 6px;color:#E57373;border-color:#E57373;" onclick="deleteTask('${t.id}')">🗑️</button>
+            </div>
+          </div>
+          <div class="text-3xl font-bold text-center my-3 timer-digit" style="color:${t.timerRunning?'var(--accent-warm)':'var(--text-main)'}">${formatTimer(currSec)}</div>
+          <div class="progress-bar mb-3"><div class="progress-fill" style="width:${pct}%"></div></div>
+          <div class="flex justify-center gap-3 flex-wrap">
+            <button class="btn-primary btn-tap" style="width:44px;height:44px;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center;font-size:18px;" onclick="toggleTimer('${t.id}');updateAllUI()">${t.timerRunning?'⏸️':'▶️'}</button>
+            <button class="btn-outline btn-tap" style="width:44px;height:44px;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center;" onclick="resetTimer('${t.id}')">🔄</button>
+            <button class="btn-outline btn-sm" onclick="openRetroDialog('${t.id}')">📝 补录</button>
+            <button class="btn-outline btn-sm" style="color:#81C784;border-color:#81C784" onclick="completeTask('${t.id}')">✅ 完成</button>
+          </div>
+        </div>`;
+      }).join('');
+  }
+
+  const chapterTasks = document.getElementById('learn-chapter-tasks');
+  if(chapterTasks) {
+    const cts = S.tasks.filter(t=>t.module==='learn' && t.type==='chapter');
+    chapterTasks.innerHTML = cts.length===0 ? '<p class="text-xs text-gray-400 text-center py-4">暂无章节任务</p>' :
+      cts.map(t=>{
+        if (t.completed) {
+          const catColor = getLearnCategoryColor(t.learnCategory||'wisdom');
+          return `
+          <div class="flip-container flipped sketch-shadow" style="min-height:100px;">
+            <div class="flip-inner" style="min-height:100px;">
+              <div class="flip-front sketch-card sketch-shadow" style="opacity:0;">
+                <div class="text-sm font-bold">${t.title}</div>
+              </div>
+              <div class="flip-back" onclick="${t.recurrence&&t.recurrence!=='none'?`flipTask('${t.id}')`:`flipTask('${t.id}')`}">
+                <div class="done-stamp">✅ 已完成</div>
+                <div class="text-xs font-medium mt-2">${t.title}</div>
+                <div class="text-xs text-gray-400 mt-1">${t.recurrence&&t.recurrence!=='none'?'点击翻转重新开始':'一次性任务'}</div>
+                <div class="flex gap-1 mt-2">
+                  <button class="btn-outline btn-sm" style="font-size:10px;padding:3px 8px;" onclick="event.stopPropagation();openEditTaskDialog('${t.id}')">✏️</button>
+                  <button class="btn-outline btn-sm" style="font-size:10px;padding:3px 8px;color:#E57373;border-color:#E57373;" onclick="event.stopPropagation();deleteTask('${t.id}')">🗑️</button>
+                </div>
+              </div>
+            </div>
+          </div>`;
+        }
+        const done = (t.chapterDone||[]).length;
+        const pct = Math.round(done/t.chapterTotal*100);
+        const catColor = getLearnCategoryColor(t.learnCategory||'wisdom');
+        return `
+        <div class="sketch-card sketch-shadow">
+          <div class="flex justify-between items-start mb-2">
+            <div><h3 class="font-bold text-sm">${t.title}</h3>
+              <p class="text-xs text-gray-400">${getDifficultyStars(t.difficulty)} | 已完成 ${done}/${t.chapterTotal} 章 | +${t.difficulty} XP</p>
+            </div>
+            <div class="flex gap-1">
+              <div class="px-2 py-1 rounded text-xs font-bold" style="background:${catColor}20;color:${catColor}">📖 ${getLearnCategoryName(t.learnCategory||'wisdom')}</div>
+              <button class="btn-outline btn-sm" style="font-size:10px;padding:3px 6px;" onclick="openEditTaskDialog('${t.id}')">✏️</button>
+              <button class="btn-outline btn-sm" style="font-size:10px;padding:3px 6px;color:#E57373;border-color:#E57373;" onclick="deleteTask('${t.id}')">🗑️</button>
+            </div>
+          </div>
+          <div class="flex justify-between text-xs mb-1"><span>进度</span><span>${pct}%</span></div>
+          <div class="progress-bar mb-3" style="border-color:#81C784"><div class="progress-fill green" style="width:${pct}%"></div></div>
+          <div class="flex gap-1.5 flex-wrap">
+            ${Array.from({length:t.chapterTotal},(_,i)=>i+1).map(n=>{
+              const isDone=(t.chapterDone||[]).includes(n);
+              return `<button class="btn-tap flex-shrink-0 rounded-lg border-2 text-xs font-bold" style="width:34px;height:34px;${isDone?'background:#81C784;border-color:#81C784;color:#fff':'border-color:#ddd;color:#999'}" onclick="updateChapter('${t.id}',${n})">${n}</button>`;
+            }).join('')}
+          </div>
+          <button class="btn-outline btn-sm mt-3 w-full" style="color:#81C784;border-color:#81C784" onclick="completeTask('${t.id}')">✅ 结算经验</button>
+        </div>`;
+      }).join('');
+  }
+
+  // ---- 我的 ----
+  setText('me-name', S.player.name);
+  setText('me-info', `Lv.${level} | 已出生 ${daysBetween(S.player.birthday, todayStr())} 天 | 任务Lv.${taskLv}/10`);
+  setText('me-birthday', S.player.birthday);
+  setText('year-report-label', `距离生日还有 ${daysLeft} 天`);
+
+  // 徽章
+  const badgeGrid = document.getElementById('badge-grid');
+  if(badgeGrid) {
+    const allBadges = [...S.badges, ...(S.customBadges||[])];
+    badgeGrid.innerHTML = allBadges.map(b=>{
+      const locked = !b.unlocked;
+      return `<div class="badge-item ${locked?'locked':''}" ${b.isCustom?`ondblclick="if(confirm('删除自定义徽章: ${b.name}?'))removeCustomBadge('${b.id}')"`:''} title="${b.desc}${b.isCustom?'\n(双击删除)':''}">
+        <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-xl sketch-shadow" style="background:${locked?'#f0f0f0':'#FFF9E6'}">
+          ${locked?'<iconify-icon icon="mingcute:lock-line" width="20" class="text-gray-400"></iconify-icon>':b.icon}
+        </div>
+        <span class="text-xs font-bold">${b.name}</span>
+      </div>`;
+    }).join('');
+  }
+
+  checkBadges();
+}
+
+// Helper functions
+function setText(id, text) { const el=document.getElementById(id); if(el) el.textContent=text; }
+function setWidth(id, w) { const el=document.getElementById(id); if(el) el.style.width=w; }
+
+function renderWorkBoss(b) {
+  const bg = b.module==='work-main'?'#FFF0F0':'#F0F6FF';
+  const border = b.module==='work-main'?'#FFCDD2':'#BBDEFB';
+  const accentCol = b.module==='work-main'?'#E57373':'#64B5F6';
+  const label = b.module==='work-main'?'主线任务':'副业挑战';
+  const labelBg = b.module==='work-main'?'background:#FFEBEE;color:#E57373':'background:#E3F2FD;color:#64B5F6';
+  const rewardIcon = b.rewardType==='gold'?'🥇':b.rewardType==='silver'?'🥈':'🪙';
+  const xpGain = getBossXP(b.difficulty);
+  return `
+  <div class="boss-card sketch-shadow mb-3" id="boss-${b.id}" style="background:${bg};border:2px solid ${border};">
+    <div class="flex justify-between items-center mb-2">
+      <div class="flex items-center gap-1">
+        <span class="text-xs font-bold px-2 py-1 rounded-lg" style="${labelBg}">${label}</span>
+        <button class="btn-outline btn-sm" style="font-size:9px;padding:1px 5px;" onclick="event.stopPropagation();openEditBossDialog('${b.id}')">✏️</button>
+        <button class="btn-outline btn-sm" style="font-size:9px;padding:1px 5px;color:#E57373;border-color:#E57373;" onclick="event.stopPropagation();deleteBoss('${b.id}')">🗑️</button>
+      </div>
+      <span class="text-xs" style="color:${accentCol}">奖励: ${rewardIcon} x${b.rewardAmount} + ${xpGain} XP</span>
+    </div>
+    <div class="flex gap-3 items-center">
+      <div class="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-2xl sketch-shadow flex-shrink-0">${b.icon||'💻'}</div>
+      <div class="flex-1">
+        <h3 class="font-bold text-sm">BOSS: ${b.name}</h3>
+        <div class="flex items-center gap-2 mt-1.5">
+          <div class="flex-1 progress-bar" style="border-color:${accentCol};height:8px;"><div class="progress-fill" style="width:${Math.round(b.hp/b.maxHP*100)}%;height:100%;background:${accentCol};"></div></div>
+          <span class="text-xs font-bold" style="color:${accentCol}">${b.hp} HP</span>
+        </div>
+      </div>
+      ${b.hp>0?`<button class="btn-tap flex-shrink-0 text-white rounded-full flex items-center justify-center" style="width:38px;height:38px;background:${accentCol};" onclick="attackBoss('${b.id}',${5+Math.floor(Math.random()*15)},false)">⚔️</button>`
+      :`<span class="text-xs text-green-500 font-bold">✅</span><button class="btn-outline btn-sm" style="color:var(--accent-warm);border-color:var(--accent-warm);font-size:10px;" onclick="reviveBoss('${b.id}')">复活</button>`}
+    </div>
+  </div>`;
+}
+
+function updateAttributeRings() {
+  const mattr = S.player.monthlyAttrs || { health: 0, charm: 0, wisdom: 0 };
+  const maxAttr = 300;
+  const rings = [
+    { id:'health', val:Math.min(100, Math.round((mattr.health||0)/maxAttr*100)), color:'#81C784' },
+    { id:'charm', val:Math.min(100, Math.round((mattr.charm||0)/maxAttr*100)), color:'#CE93D8' },
+    { id:'wisdom', val:Math.min(100, Math.round((mattr.wisdom||0)/maxAttr*100)), color:'#64B5F6' },
+  ];
+  rings.forEach(r=>{
+    const ring = document.getElementById('ring-'+r.id);
+    if(ring) ring.setAttribute('stroke-dashoffset', CIRC - (CIRC*r.val/100));
+    const text = document.getElementById('ring-'+r.id+'-text');
+    if(text) text.textContent = (mattr[r.id]||0);
+  });
+}
+
+// ---- 计时器实时刷新 ----
+let timerInterval = null;
+function startTimerTick() {
+  if(timerInterval) return;
+  timerInterval = setInterval(()=>{
+    const hasRunning = S.tasks.some(t=>t.type==='timer' && t.timerRunning);
+    if(hasRunning) updateAllUI();
+  }, 1000);
+}
+startTimerTick();
+
+// ---- 状态栏时钟 ----
+function updateStatusBar() {
+  const now=new Date(), h=now.getHours().toString().padStart(2,'0'), m=now.getMinutes().toString().padStart(2,'0');
+  const el=document.getElementById('status-time'); if(el) el.textContent=h+':'+m;
+}
+updateStatusBar(); setInterval(updateStatusBar,30000);
+
+// ---- 每日重置 ----
+function checkDailyReset() {
+  const today = todayStr();
+  const thisMonth = today.slice(0,7);
+  let changed = false;
+
+  // Daily reset
+  if (S.player.lastActiveDate !== today) {
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    if (S.player.lastActiveDate === yesterdayStr) {
+      S.player.streak = (S.player.streak||0) + 1;
+    } else if (S.player.lastActiveDate !== today) {
+      S.player.streak = 1;
+    }
+    S.player.lastActiveDate = today;
+    S.player.xpToday = 0;
+    S.player.tasksDoneToday = 0;
+    resetDailyCaps();
+
+    // 每日自动+10成长经验
+    addGrowthXP(10);
+
+    // Restore recurring daily tasks (card flip back)
+    S.tasks.forEach(t=>{
+      if (t.recurrence==='daily' && t.completed) {
+        t.completed = false;
+        if(t.type==='timer') { t.timerAccumulated=0; t.timerRunning=false; t.timerStartTs=null; }
+        if(t.type==='chapter') { t.chapterDone=[]; }
+      }
+    });
+    changed = true;
+  }
+
+  // Monthly reset: satisfaction & learn attributes
+  if (S.player.lastActiveMonth !== thisMonth) {
+    S.player.lastActiveMonth = thisMonth;
+    S.player.satisfaction = 0;
+    // Reset monthly attribute progress
+    if (!S.player.monthlyAttrs) S.player.monthlyAttrs = { health: 0, charm: 0, wisdom: 0 };
+    S.player.monthlyAttrs = { health: 0, charm: 0, wisdom: 0 };
+    // Reset weekly/monthly recurring tasks
+    S.tasks.forEach(t=>{
+      if ((t.recurrence==='weekly' || t.recurrence==='monthly') && t.completed) {
+        t.completed = false;
+        if(t.type==='timer') { t.timerAccumulated=0; t.timerRunning=false; t.timerStartTs=null; }
+        if(t.type==='chapter') { t.chapterDone=[]; }
+      }
+    });
+    changed = true;
+    spawnFloatReward('🌙 新月已至，进度已重置', '#7EC8E3');
+  }
+
+  if (changed) { save(); updateAllUI(); }
+}
+checkDailyReset();
+
+// ---- 初始化 ----
+function init() {
+  checkDailyReset();
+  checkBirthday();
+  updateAllUI();
+  const hour = new Date().getHours();
+  let greeting = '今天也是元气满满的一天！';
+  if(hour<6) greeting='夜深了，注意休息哦~';
+  else if(hour<9) greeting='早安！新的一天开始啦~';
+  else if(hour<12) greeting='上午好！效率最高的时候~';
+  else if(hour<14) greeting='午安！记得好好吃饭~';
+  else if(hour<18) greeting='下午好！继续加油~';
+  else if(hour<21) greeting='晚上好！放松一下吧~';
+  else greeting='夜晚是属于思考的时间~';
+  const el=document.getElementById('home-greeting'); if(el) el.textContent=greeting;
+}
+init();
+
+console.log('🌟 Newme 纽米 v2 - 双经验系统已就绪！');
+console.log('📱 等级: Lv.'+getLevel()+' | 🎂 距生日: '+daysUntilBirthday()+' 天 | 任务等级: Lv.'+getTaskLevel()+'/10');
+console.log('📈 成长经验: '+fmt(S.player.growthXP||0)+'/3650 | 任务经验: '+fmt(S.player.taskXPTotal||0));
+console.log('💰 财富: '+fmt(S.player.copper)+'铜钱 '+fmt(S.player.silver)+'银 '+fmt(S.player.gold)+'金');
+console.log('💾 数据自动保存至 localStorage (key: newme_state_v2)');
+
+// ---- PWA: Service Worker & Install ----
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(() => console.log('📦 SW registered')).catch(() => {});
+}
+
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const btn = document.getElementById('install-btn');
+  if (btn) btn.style.display = 'flex';
+});
+
+window.installApp = function() {
+  if (!deferredPrompt) { alert('安装暂不可用，请稍后再试~'); return; }
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(() => {
+    deferredPrompt = null;
+    const btn = document.getElementById('install-btn');
+    if (btn) btn.style.display = 'none';
+  });
+};
+</script>
+</body>
+</html>

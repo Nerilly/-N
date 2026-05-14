@@ -1,0 +1,20 @@
+{
+  "name": "Newme 纽米 - 游戏化成长计时",
+  "short_name": "Newme 纽米",
+  "description": "手绘治愈风自我成长助手 - 任务管理、BOSS挑战、日记系统",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#F5F0E8",
+  "background_color": "#F5F0E8",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "lifestyle"]
+}
